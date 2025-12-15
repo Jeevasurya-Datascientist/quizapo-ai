@@ -1,0 +1,116 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- HELPER FUNCTIONS ---
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // --- 1. USERS COLLECTION ---
+    match /users/{userId} {
+      // 1. READ: Public
+      allow read: if true;
+      
+      // 2. CREATE: Owner only
+      allow create: if isOwner(userId);
+      
+      // 3. UPDATE: 
+      allow update: if isOwner(userId) || (
+        isAuthenticated() && 
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['followers', 'following', 'facultyConnections', 'isIdVerified'])
+      );
+    }
+
+    // --- 2. SOCIAL REQUESTS ---
+    match /followRequests/{requestId} {
+      allow read: if isAuthenticated() && (
+        resource.data.studentId == request.auth.uid || 
+        resource.data.facultyId == request.auth.uid
+      );
+      
+      allow create: if isAuthenticated();
+
+      allow update: if isAuthenticated() && (
+        resource.data.facultyId == request.auth.uid || 
+        resource.data.studentId == request.auth.uid
+      );
+      
+      allow delete: if isAuthenticated() && (
+        resource.data.facultyId == request.auth.uid || 
+        resource.data.studentId == request.auth.uid
+      );
+    }
+
+    match /connectionRequests/{requestId} {
+      allow read: if isAuthenticated() && (
+        resource.data.fromFacultyId == request.auth.uid || 
+        resource.data.toFacultyId == request.auth.uid
+      );
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        resource.data.toFacultyId == request.auth.uid || 
+        resource.data.fromFacultyId == request.auth.uid
+      );
+      allow delete: if isAuthenticated() && (
+        resource.data.toFacultyId == request.auth.uid || 
+        resource.data.fromFacultyId == request.auth.uid
+      );
+    }
+
+    // --- 3. STANDARD COLLECTIONS ---
+    
+    // [NEW] Question Bank Permissions
+    match /questionBanks/{bankId} {
+      // Allow any auth user to read (for sharing/marketplace potential)
+      // Or restrict to owner? For now, public read is fine or restrict to owner if private.
+      // Based on typical "Bank" logic, let's allow read for now.
+      allow read: if isAuthenticated();
+      
+      // Create: Must be authenticated and setting themselves as owner
+      allow create: if isAuthenticated() && request.resource.data.facultyId == request.auth.uid;
+      
+      // Update/Delete: Only the owner
+      allow update, delete: if isAuthenticated() && resource.data.facultyId == request.auth.uid;
+    }
+
+    match /tests/{testId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated() && request.resource.data.facultyId == request.auth.uid;
+    }
+
+    match /testAttempts/{attemptId} {
+      allow read: if isAuthenticated() && (
+        resource.data.studentId == request.auth.uid || 
+        get(/databases/$(database)/documents/tests/$(resource.data.testId)).data.facultyId == request.auth.uid
+      );
+      allow create: if isAuthenticated() && request.resource.data.studentId == request.auth.uid;
+      allow update: if false; 
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && (
+        resource.data.studentId == request.auth.uid || 
+        resource.data.facultyId == request.auth.uid
+      );
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && resource.data.studentId == request.auth.uid;
+    }
+
+    match /violationAlerts/{alertId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+    }
+    
+    match /chats/{chatId}/messages/{messageId} {
+      allow read, create: if isAuthenticated();
+    }
+  }
+}

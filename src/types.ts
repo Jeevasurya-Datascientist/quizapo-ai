@@ -24,38 +24,41 @@ export enum AiProvider {
 }
 
 export enum Role {
-  Faculty = 'faculty', 
+  Faculty = 'faculty',
   Student = 'student',
 }
 
 // --- Navigation Types ---
 
-export type View = 
-  | 'auth' 
-  | 'emailVerification' 
-  | 'idVerification' 
+export type View =
+  | 'auth'
+  | 'emailVerification'
+  | 'idVerification'
   // Main Views
-  | 'dashboard'     
-  | 'content'       
-  | 'network'       
-  | 'integrity'     
+  | 'dashboard'
+  | 'content'
+  | 'network'
+  | 'integrity'
   // Sub Views / Actions
-  | 'generator' 
-  | 'results' 
-  | 'manualCreator' 
-  | 'test' 
-  | 'studentLogin' 
-  | 'testResults' 
-  | 'testHistory' 
-  | 'notifications' 
-  | 'testAnalytics' 
-  | 'profile' 
+  | 'generator'
+  | 'results'
+  | 'manualCreator'
+  | 'test'
+  | 'studentLogin'
+  | 'testResults'
+  | 'testHistory'
+  | 'notifications'
+  | 'testAnalytics'
+  | 'profile'
   // Legacy / Redirections
-  | 'studentPortal' 
-  | 'facultyPortal' 
-  | 'following' 
-  | 'followers' 
+  | 'studentPortal'
+  | 'facultyPortal'
+  | 'following'
+  | 'followers'
   | 'connect'
+  | 'myBanks'
+  | 'createBank'
+  | 'editBank'
   | 'certificate';
 
 // --- User & Social Interfaces ---
@@ -66,7 +69,7 @@ export interface AppUser {
   name: string;
   email: string;
   role: Role;
-  collegeName: string; 
+  collegeName: string;
   country: string;
   state: string;
   district: string;
@@ -128,8 +131,8 @@ export interface FormState {
 }
 
 export interface CustomFormField {
-    label: string;
-    required?: boolean;
+  label: string;
+  required?: boolean;
 }
 
 export interface Test {
@@ -154,6 +157,18 @@ export interface GeneratedMcqSet {
   facultyId: string;
   timestamp: Date;
   mcqs: MCQ[];
+}
+
+export interface QuestionBank {
+  id: string;
+  facultyId: string;
+  title: string;
+  description?: string;
+  questions: MCQ[];
+  tags: string[];
+  createdAt: string; // ISO String
+  updatedAt: string; // ISO String
+  isPublic?: boolean;
 }
 
 // --- Student Execution Interfaces ---
@@ -188,25 +203,25 @@ export interface AppNotification {
   studentEmail: string;
   facultyId: string; // Sender
   facultyName: string;
-  
+
   // Dynamic Content
-  type?: 'test_invite' | 'message' | 'alert'; 
+  type?: 'test_invite' | 'message' | 'alert';
   title?: string;
   message?: string;
   test?: Test; // Optional (only for test_invite)
-  
+
   status: 'new' | 'read' | 'ignored';
   timestamp?: string; // ISO String
   actionTimestamp?: string;
 }
 
 export interface ViolationAlert {
-    id: string;
-    studentId: string;
-    studentEmail: string;
-    facultyId: string;
-    testId: string;
-    testTitle: string;
-    timestamp: string;
-    status: 'pending' | 'resolved';
+  id: string;
+  studentId: string;
+  studentEmail: string;
+  facultyId: string;
+  testId: string;
+  testTitle: string;
+  timestamp: string;
+  status: 'pending' | 'resolved';
 }

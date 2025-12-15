@@ -24,6 +24,7 @@ export interface RegistrationData {
   country: string;
   state: string;
   district: string;
+  googleUser?: User;
 }
 
 interface AuthPortalProps {
@@ -83,6 +84,7 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({
   });
   const [password, setPassword] = useState('');
   const [isGoogleAuth, setIsGoogleAuth] = useState(false);
+  const [googleUser, setGoogleUser] = useState<User | null>(null);
 
   useEffect(() => {
     setError(null);
@@ -153,6 +155,7 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({
         setError(result.error);
       } else if (result.isNewUser && result.googleUser) {
         setIsGoogleAuth(true);
+        setGoogleUser(result.googleUser);
         setIsLogin(false);
         setFormData(prev => ({
           ...prev,
@@ -216,7 +219,11 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({
         const errorMsg = await onLogin(formData.email, password);
         if (errorMsg) setError(errorMsg);
       } else {
-        const res = await onRegister({ ...formData, password: isGoogleAuth ? undefined : password });
+        const res = await onRegister({
+          ...formData,
+          password: isGoogleAuth ? undefined : password,
+          googleUser: googleUser || undefined
+        });
         if (res.error) setError(res.error);
         else if (res.success && res.email) onRegistrationSuccess(res.email);
       }

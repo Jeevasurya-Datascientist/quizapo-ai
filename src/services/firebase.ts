@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
@@ -13,7 +13,15 @@ const firebaseConfig = {
   measurementId: "G-5V4TY11C27"
 };
 
+import { verifyJsCorp } from "../core/js-corp-lock";
+
+// Ensure Core Integrity before Service Export
+if (!verifyJsCorp()) {
+  throw new Error("Service Initialization Failed: Core Verification Error");
+}
+
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
+setPersistence(auth, browserLocalPersistence).catch(console.error);
 export const db = getFirestore(app);
 export const storage = getStorage(app);

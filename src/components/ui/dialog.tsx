@@ -63,6 +63,18 @@ const DialogTitle = React.forwardRef<
 ))
 DialogTitle.displayName = "DialogTitle"
 
+const DialogDescription = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLParagraphElement>
+>(({ className, ...props }, ref) => (
+  <p
+    ref={ref}
+    className={cn("text-sm text-muted-foreground", className)}
+    {...props}
+  />
+))
+DialogDescription.displayName = "DialogDescription"
+
 const DialogFooter = ({
   className,
   ...props
@@ -77,4 +89,4 @@ const DialogFooter = ({
 )
 DialogFooter.displayName = "DialogFooter"
 
-export { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter }
+export { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter }
