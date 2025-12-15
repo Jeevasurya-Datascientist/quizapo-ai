@@ -416,27 +416,6 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({
 
             {!isLogin && step === 3 && (
               <div className="space-y-4 animate-in slide-in-from-right-8 duration-300">
-                <div className="grid grid-cols-2 gap-3">
-                  <div
-                    onClick={() => handleInputChange('role', Role.Student)}
-                    className={cn(
-                      "cursor-pointer rounded-lg border-2 p-4 text-center transition-all hover:bg-gray-50 dark:hover:bg-zinc-800",
-                      formData.role === Role.Student ? "border-primary bg-primary/5" : "border-muted"
-                    )}
-                  >
-                    <span className="text-sm font-medium">Student</span>
-                  </div>
-                  <div
-                    onClick={() => handleInputChange('role', Role.Faculty)}
-                    className={cn(
-                      "cursor-pointer rounded-lg border-2 p-4 text-center transition-all hover:bg-gray-50 dark:hover:bg-zinc-800",
-                      formData.role === Role.Faculty ? "border-primary bg-primary/5" : "border-muted"
-                    )}
-                  >
-                    <span className="text-sm font-medium">Faculty</span>
-                  </div>
-                </div>
-
                 <div className="space-y-2">
                   <Label>Institution</Label>
                   <Input
