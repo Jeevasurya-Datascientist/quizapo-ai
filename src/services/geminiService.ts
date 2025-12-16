@@ -1,3 +1,4 @@
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { FormState, MCQ } from "../types";
 import { AiProvider } from "../types";
 
@@ -224,49 +225,130 @@ export interface ValidationResult {
  * Validates a list of questions for structural integrity and basic quality.
  * Currently uses local logic, but can be enhanced to use AI.
  */
-export const validateQuestionBank = async (questions: MCQ[], topic: string = "General"): Promise<ValidationResult> => {
+// --- Validation Fallback (Groq) ---
+const _validateWithGroq = async (questions: any[], topic: string): Promise<ValidationResult> => {
+  const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+  if (!apiKey) return { issues: [] }; // No API, no validation
+
+  const prompt = `
+    Act as a "Strict Professor". Review these MCQs on "${topic}".
+    Questions: ${JSON.stringify(questions)}
+    
+    Rules:
+    1. Detect WRONG answers (factually incorrect).
+    2. Detect IRRELEVANT options (nonsense).
+    3. Detect FORMATTING issues (typos, duplicates).
+    
+    Return pure JSON:
+    {
+      "issues": [
+        {
+          "questionIndex": number,
+          "issueType": "wrong_answer" | "irrelevant_option" | "formatting",
+          "description": "Short explanation",
+          "suggestedFix": { ...corrected question object... }
+        }
+      ]
+    }
+    Only report ACTUAL errors. Return empty issues list if perfect.
+  `;
+
+  try {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: [{ role: 'user', content: prompt }],
+        model: 'llama-3.3-70b-versatile',
+        temperature: 0.1,
+        max_tokens: 4000,
+        response_format: { type: "json_object" }
+      }),
+    });
+
+    if (!response.ok) throw new Error("Groq Validation Failed");
+    const data = await response.json();
+    const content = data.choices[0].message.content;
+
+    let json;
+    try {
+      json = JSON.parse(content);
+    } catch {
+      json = JSON.parse(repairJson(content));
+    }
+    return json as ValidationResult;
+
+  } catch (error) {
+    console.warn("Groq Validator also failed:", error);
+    // basic fallback
+    return _basicLocalValidation(questions);
+  }
+};
+
+const _basicLocalValidation = (questions: MCQ[]): ValidationResult => {
   const issues: ValidationIssue[] = [];
-
   questions.forEach((q, idx) => {
-    // 1. Check for missing answer
-    if (!q.answer) {
-      issues.push({
-        issueType: 'missing_answer',
-        description: 'This question does not have a selected answer.',
-        questionIndex: idx
-      });
-    } else if (!q.options.includes(q.answer)) {
+    if (!q.answer || !q.options.includes(q.answer)) {
       issues.push({
         issueType: 'formatting',
-        description: 'The selected answer is not one of the provided options.',
-        questionIndex: idx
-      });
-    }
-
-    // 2. Check for duplicate options
-    const uniqueOptions = new Set(q.options.map(o => o.trim()));
-    if (uniqueOptions.size !== q.options.length) {
-      issues.push({
-        issueType: 'duplicate_options',
-        description: 'There are duplicate options in this question.',
-        questionIndex: idx
-      });
-    }
-
-    // 3. Basic Field Checks
-    if (!q.question.trim()) {
-      issues.push({
-        issueType: 'formatting',
-        description: 'Question text is empty.',
-        questionIndex: idx
+        description: 'Answer matches nobody.',
+        questionIndex: idx,
+        suggestedFix: { ...q, answer: q.options[0] }
       });
     }
   });
+  return { issues };
+};
 
-  // Simulating an async check
-  return new Promise((resolve) => {
-    setTimeout(() => resolve({ issues }), 500);
-  });
+export const validateQuestionBank = async (questions: any[], topic: string): Promise<ValidationResult> => {
+  // Try Gemini First
+  try {
+    if (!import.meta.env.VITE_GEMINI_API_KEY) throw new Error("No Gemini Key");
+    const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-002", generationConfig: { responseMimeType: "application/json" } });
+
+    const prompt = `
+    Act as a Strict Professor. Review the following Multiple Choice Questions.
+    Topic Context: "${topic}".
+    
+    Check for:
+    1. WRONG ANSWERS: Is the marked correct answer actually incorrect?
+    2. IRRELEVANT OPTIONS: Are the options completely unrelated to the question?
+    3. FORMATTING: Are there typos, duplicates, or nonsense text?
+    
+    Questions JSON:
+    ${JSON.stringify(questions)}
+    
+    Return a JSON object with this structure:
+    {
+      "issues": [
+        {
+          "questionIndex": number, // 0-based index of the question in the list
+          "issueType": "wrong_answer" | "irrelevant_option" | "formatting",
+          "description": "Short explanation of the error",
+          "suggestedFix": { ...question object with the fix applied ... }
+        }
+      ]
+    }
+    
+    Only report ACTUAL errors. Do not nitpick. If a question is technically correct, ignore it.
+    Return ONLY JSON.
+  `;
+
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
+    let json;
+    try {
+      json = JSON.parse(text);
+    } catch {
+      json = JSON.parse(repairJson(text));
+    }
+    return json as ValidationResult;
+
+  } catch (error) {
+    console.warn("Primary AI (Gemini) unavailable for validation, switching to Backup (Groq)...");
+    return await _validateWithGroq(questions, topic);
+  }
 };
 
 
