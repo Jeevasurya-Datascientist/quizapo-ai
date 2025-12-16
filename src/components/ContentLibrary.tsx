@@ -1,14 +1,20 @@
 import React, { useState } from 'react';
-import { QuestionBank, Test, CustomFormField, View, GeneratedMcqSet } from '../types';
+import { QuestionBank, Test, CustomFormField, View } from '../types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import {
-  FileText, Share2, Trash2, PlusCircle, Clock, Calendar, AlertCircle, X, Copy, CheckCircle2, Link as LinkIcon, Edit2, History
+  FileText, Share2, Trash2, PlusCircle, Clock, Calendar, AlertCircle, X, CheckCircle2, Link as LinkIcon, Edit2, History,
+  Rocket, StopCircle, BarChart3, MoreVertical, Search
 } from 'lucide-react';
-import { McqDisplay } from './McqDisplay';
 import { Badge } from './ui/badge';
 import { cn } from '../lib/utils';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // --- SUB-COMPONENT: PublishModal ---
 interface PublishModalProps {
@@ -44,11 +50,11 @@ const PublishModal: React.FC<PublishModalProps> = ({ questionCount, onSubmit, on
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <Card className="w-full max-w-lg shadow-2xl border-primary/20 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200 overflow-y-auto">
+      <Card className="w-full max-w-lg shadow-2xl border-primary/20 my-auto">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <div>
-            <CardTitle>Publish Test</CardTitle>
+            <CardTitle>Launch Test</CardTitle>
             <CardDescription>Configure settings for {questionCount} questions</CardDescription>
           </div>
           <Button variant="ghost" size="icon" onClick={onClose}><X className="w-4 h-4" /></Button>
@@ -60,7 +66,7 @@ const PublishModal: React.FC<PublishModalProps> = ({ questionCount, onSubmit, on
               <Input placeholder="e.g. Final Exam - Module 1" value={title} onChange={e => setTitle(e.target.value)} autoFocus />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Duration (Minutes)</label>
                 <Input type="number" min="1" value={duration} onChange={e => setDuration(parseInt(e.target.value) || 0)} />
@@ -78,7 +84,7 @@ const PublishModal: React.FC<PublishModalProps> = ({ questionCount, onSubmit, on
             </div>
 
             <div className="flex flex-col gap-2 p-3 bg-muted/30 rounded-lg">
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-4">
                 <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
                   <input type="checkbox" checked={shuffleQuestions} onChange={e => setShuffleQuestions(e.target.checked)} className="rounded border-gray-300 text-primary focus:ring-primary" />
                   Shuffle Questions
@@ -94,7 +100,6 @@ const PublishModal: React.FC<PublishModalProps> = ({ questionCount, onSubmit, on
                   Allow Skipping Questions
                 </label>
               </div>
-              <p className="text-[10px] text-muted-foreground">If "Allow Skipping" is unchecked, students must answer all questions to submit.</p>
             </div>
 
             {error && (
@@ -103,9 +108,11 @@ const PublishModal: React.FC<PublishModalProps> = ({ questionCount, onSubmit, on
               </div>
             )}
 
-            <div className="flex justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-              <Button type="submit">Publish & Notify Followers</Button>
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={onClose} className="w-full sm:w-auto">Cancel</Button>
+              <Button type="submit" className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto">
+                <Rocket className="w-4 h-4 mr-2" /> Launch Now
+              </Button>
             </div>
           </form>
         </CardContent>
@@ -114,8 +121,8 @@ const PublishModal: React.FC<PublishModalProps> = ({ questionCount, onSubmit, on
   );
 };
 
-// --- SUB-COMPONENT: BankItem (Replaces DraftItem) ---
-const BankItem: React.FC<{
+// --- SUB-COMPONENT: BankItem (Draft) ---
+const BankDisplayCard: React.FC<{
   bank: QuestionBank;
   onEdit: (id: string) => void;
   onPublish: (id: string, ...args: any[]) => void;
@@ -123,30 +130,34 @@ const BankItem: React.FC<{
   const [showModal, setShowModal] = useState(false);
 
   return (
-    <div className="border rounded-xl bg-card transition-all hover:shadow-md hover:border-primary/30 group">
-      <div className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="bg-amber-100 text-amber-700 border-amber-200">
-              Draft Bank
-            </Badge>
-            <h4 className="font-semibold">{bank.title || "Untitled Bank"}</h4>
+    <Card className="group hover:shadow-lg transition-all duration-300 border-l-4 border-l-zinc-300 hover:border-l-indigo-500 overflow-hidden">
+      <CardContent className="p-0">
+        <div className="p-5 flex flex-col md:flex-row md:items-center gap-4 justify-between">
+          <div className="space-y-1.5 flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <Badge variant="outline" className="bg-zinc-100 text-zinc-600 border-zinc-200 whitespace-nowrap">Draft</Badge>
+              <span className="text-xs text-muted-foreground flex items-center gap-1 whitespace-nowrap">
+                <Clock className="w-3 h-3" /> Updated {new Date(bank.updatedAt || Date.now()).toLocaleDateString()}
+              </span>
+            </div>
+            <h3 className="font-bold text-lg text-foreground group-hover:text-indigo-600 transition-colors break-words">
+              {bank.title || "Untitled Assessment"}
+            </h3>
+            <p className="text-sm text-muted-foreground line-clamp-1">
+              {bank.description || `${bank.questions.length} questions included.`}
+            </p>
           </div>
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1"><FileText className="w-3 h-3" /> {bank.questions.length} Questions</span>
-            <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Updated: {bank.updatedAt ? new Date(bank.updatedAt).toLocaleDateString() : 'New'}</span>
-          </div>
-        </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Button variant="ghost" size="sm" onClick={() => onEdit(bank.id)} className="flex-1 sm:flex-none">
-            <Edit2 className="w-4 h-4 mr-2" /> Edit
-          </Button>
-          <Button size="sm" onClick={() => setShowModal(true)} className="flex-1 sm:flex-none">
-            <Share2 className="w-4 h-4 mr-2" /> Publish Test
-          </Button>
+          <div className="flex items-center gap-2 pt-2 md:pt-0 border-t md:border-t-0 mt-2 md:mt-0 w-full md:w-auto">
+            <Button variant="outline" size="sm" onClick={() => onEdit(bank.id)} className="flex-1 md:flex-none">
+              <Edit2 className="w-4 h-4 mr-2 text-zinc-500" /> Edit
+            </Button>
+            <Button size="sm" onClick={() => setShowModal(true)} className="flex-1 md:flex-none bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-500/20">
+              <Rocket className="w-4 h-4 mr-2" /> Launch Test
+            </Button>
+          </div>
         </div>
-      </div>
+      </CardContent>
 
       {showModal && (
         <PublishModal
@@ -158,12 +169,12 @@ const BankItem: React.FC<{
           }}
         />
       )}
-    </div>
+    </Card>
   );
 };
 
-// --- SUB-COMPONENT: PublishedItem ---
-const PublishedItem: React.FC<{
+// --- SUB-COMPONENT: PublishedItem (Live) ---
+const PublishedDisplayCard: React.FC<{
   test: Test;
   onRevoke: (id: string) => void;
   onAnalytics: (test: Test) => void;
@@ -173,11 +184,10 @@ const PublishedItem: React.FC<{
   // Autonomous Expiration Check
   const isExpired = test.endDate && new Date(test.endDate) < new Date();
 
+  // Handle Share
   const handleShare = () => {
-    // Create direct deep link
     const baseUrl = window.location.origin + window.location.pathname;
     const shareUrl = `${baseUrl}?testId=${test.id}`;
-
     navigator.clipboard.writeText(shareUrl).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -186,54 +196,80 @@ const PublishedItem: React.FC<{
 
   return (
     <Card className={cn(
-      "transition-colors",
-      isExpired ? "opacity-80 bg-muted/40 border-dashed" : "hover:border-primary/40"
+      "transition-all duration-300 border-l-4 overflow-hidden",
+      isExpired ? "opacity-75 border-l-zinc-300 bg-zinc-50/50" : "border-l-green-500 border-t border-r border-b shadow-sm hover:shadow-md"
     )}>
-      <CardContent className="p-4 flex flex-col gap-3">
-        <div className="flex justify-between items-start">
-          <div className="space-y-1">
-            <h4 className="font-bold text-lg flex items-center gap-2">
-              {test.title}
-              {isExpired && <Badge variant="destructive" className="text-[10px] h-5">Expired</Badge>}
-            </h4>
-            <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {test.durationMinutes}m</span>
-              <span className="flex items-center gap-1"><FileText className="w-3 h-3" /> {test.questions.length} Qs</span>
-              {test.endDate && (
-                <span className={cn("flex items-center gap-1", isExpired ? "text-destructive" : "text-orange-600")}>
-                  <Calendar className="w-3 h-3" /> {isExpired ? "Ended:" : "Due:"} {new Date(test.endDate).toLocaleDateString()}
-                </span>
+      <CardContent className="p-5 flex flex-col gap-4">
+
+        {/* Top Row: Status & Title */}
+        <div className="flex justify-between items-start gap-2">
+          <div className="space-y-1 min-w-0 flex-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              {isExpired ? (
+                <Badge variant="secondary" className="bg-zinc-100 text-zinc-500">Closed</Badge>
+              ) : (
+                <Badge className="bg-green-100 text-green-700 border-green-200 animate-pulse hover:bg-green-200">
+                  ● Live
+                </Badge>
               )}
+              <span className="text-xs text-muted-foreground flex items-center gap-1 whitespace-nowrap">
+                <FileText className="w-3 h-3" /> {test.questions.length} Qs
+              </span>
             </div>
+            <h3 className="font-bold text-lg break-words leading-tight">{test.title}</h3>
           </div>
-          <Badge variant="outline" className={cn(
-            "border-green-200",
-            isExpired ? "text-muted-foreground border-border" : "text-green-600 bg-green-50"
-          )}>
-            {isExpired ? 'Closed' : 'Live'}
-          </Badge>
+
+          {/* Action Menu (More Options) */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0"><MoreVertical className="w-4 h-4 text-muted-foreground" /></Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleShare}>
+                <LinkIcon className="w-4 h-4 mr-2" /> Copy Link
+              </DropdownMenuItem>
+              <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => onRevoke(test.id)}>
+                <StopCircle className="w-4 h-4 mr-2" /> Stop Test
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
-        <div className="flex gap-2 pt-2 border-t mt-1">
-          <Button variant="outline" size="sm" className="flex-1" onClick={() => onAnalytics(test)}>
-            Analytics
-          </Button>
+        {/* Middle Row: Info */}
+        <div className="flex flex-wrap gap-4 text-sm text-muted-foreground bg-zinc-50 dark:bg-zinc-900/50 p-3 rounded-lg">
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-indigo-500 shrink-0" />
+            <span>{test.durationMinutes} min</span>
+          </div>
+          {test.endDate && (
+            <div className="flex items-center gap-2">
+              <Calendar className={cn("w-4 h-4 shrink-0", isExpired ? "text-red-500" : "text-amber-500")} />
+              <span className="text-xs sm:text-sm">{isExpired ? "Ended" : "Ends"}: {new Date(test.endDate).toLocaleDateString()}</span>
+            </div>
+          )}
+        </div>
 
+        {/* Bottom Row: Primary Actions */}
+        <div className="flex flex-col sm:flex-row gap-3 pt-2">
           <Button
-            variant="outline"
-            size="sm"
-            onClick={handleShare}
-            className={cn("flex-1", copied ? "text-green-600 border-green-200" : "")}
-            disabled={!!isExpired} // Disable share if expired
+            className="flex-1 bg-white border border-zinc-200 text-foreground hover:bg-zinc-50 hover:text-primary w-full"
+            onClick={() => onAnalytics(test)}
           >
-            {copied ? <CheckCircle2 className="w-4 h-4 mr-2" /> : <LinkIcon className="w-4 h-4 mr-2" />}
-            {copied ? 'Link Copied' : 'Copy Link'}
+            <BarChart3 className="w-4 h-4 mr-2 text-indigo-500" /> <span className="truncate">Analytics</span>
           </Button>
 
-          <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => onRevoke(test.id)}>
-            <Trash2 className="w-4 h-4" />
-          </Button>
+          {!isExpired && (
+            <Button
+              variant="outline"
+              className={cn("flex-1 w-full", copied ? "border-green-500 text-green-600 bg-green-50" : "")}
+              onClick={handleShare}
+            >
+              {copied ? <CheckCircle2 className="w-4 h-4 mr-2" /> : <Share2 className="w-4 h-4 mr-2" />}
+              {copied ? "Copied" : "Share"}
+            </Button>
+          )}
         </div>
+
       </CardContent>
     </Card>
   );
@@ -260,115 +296,140 @@ export const ContentLibrary: React.FC<ContentLibraryProps> = ({
   onNavigate,
   onEditBank
 }) => {
+  const [activeTab, setActiveTab] = useState<'drafts' | 'published'>('drafts');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Filtering
+  const filteredBanks = questionBanks.filter(b => b.title.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredTests = publishedTests.filter(t => t.title.toLowerCase().includes(searchQuery.toLowerCase()));
+
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+    <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500 max-w-6xl mx-auto px-1 sm:px-0">
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b pb-6">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Content Library</h2>
-          <p className="text-muted-foreground">Manage your drafts, publish tests, and track deadlines.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Command Center</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Manage your assessments and monitor live tests.</p>
         </div>
-
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => onNavigate('testHistory')}>
-            <History className="w-4 h-4 mr-2" /> My Attempts
+        <div className="flex gap-2 w-full md:w-auto">
+          <Button variant="outline" onClick={() => onNavigate('testHistory')} className="border-zinc-200 flex-1 md:flex-none">
+            <History className="w-4 h-4 mr-2" /> <span className="hidden sm:inline">Recent Activity</span><span className="inline sm:hidden">History</span>
           </Button>
-
-          <Button onClick={() => onNavigate('createBank')} className="shadow-lg shadow-primary/20">
-            <PlusCircle className="w-4 h-4 mr-2" /> Create New
+          <Button onClick={() => onNavigate('createBank')} className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg shadow-indigo-500/20 text-white border-0 flex-1 md:flex-none">
+            <PlusCircle className="w-4 h-4 mr-2" /> <span className="hidden sm:inline">Create New Assessment</span><span className="inline sm:hidden">New</span>
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* Controls & Tabs */}
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-zinc-50/50 dark:bg-zinc-900/50 p-2 rounded-xl border border-zinc-100 dark:border-zinc-800">
 
-        {/* Drafts Column */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="p-2 bg-amber-100 dark:bg-amber-900/20 rounded-lg">
-              <FileText className="w-5 h-5 text-amber-600 dark:text-amber-500" />
-            </div>
-            <h3 className="text-xl font-semibold">Draft Banks</h3>
-          </div>
+        {/* Tab Switcher */}
+        <div className="flex p-1 bg-white dark:bg-zinc-950 rounded-lg border border-zinc-200 dark:border-zinc-800 shadow-sm w-full md:w-auto">
+          <button
+            onClick={() => setActiveTab('drafts')}
+            className={cn(
+              "flex-1 md:flex-none px-4 sm:px-6 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2",
+              activeTab === 'drafts'
+                ? "bg-zinc-100 dark:bg-zinc-800 text-foreground shadow-sm"
+                : "text-muted-foreground hover:bg-zinc-50 dark:hover:bg-zinc-900"
+            )}
+          >
+            <FileText className="w-4 h-4" /> Drafts <Badge variant="secondary" className="ml-2 text-[10px] h-5 px-1.5 bg-zinc-200 dark:bg-zinc-700">{questionBanks.length}</Badge>
+          </button>
+          <button
+            onClick={() => setActiveTab('published')}
+            className={cn(
+              "flex-1 md:flex-none px-4 sm:px-6 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2",
+              activeTab === 'published'
+                ? "bg-white dark:bg-zinc-800 text-foreground shadow-sm ring-1 ring-zinc-200 dark:ring-zinc-700"
+                : "text-muted-foreground hover:bg-zinc-50 dark:hover:bg-zinc-900"
+            )}
+          >
+            <Rocket className="w-4 h-4" /> Live Tests <Badge variant="secondary" className="ml-2 text-[10px] h-5 px-1.5 bg-zinc-200 dark:bg-zinc-700">{publishedTests.length}</Badge>
+          </button>
+        </div>
 
-          <div className="space-y-4">
-            {questionBanks.length > 0 ? (
-              [...questionBanks]
-                .sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime())
-                .map(bank => (
-                  <BankItem
-                    key={bank.id}
-                    bank={bank}
-                    onEdit={onEditBank}
-                    onPublish={onPublishTest}
-                  />
-                ))
+        {/* Search */}
+        <div className="relative w-full md:w-72">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search..."
+            className="pl-9 bg-white dark:bg-zinc-950"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+          />
+        </div>
+      </div>
+
+      {/* Content Area */}
+      <div className="min-h-[400px]">
+        {activeTab === 'drafts' ? (
+          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            {filteredBanks.length > 0 ? (
+              <div className="grid grid-cols-1 gap-4">
+                {filteredBanks
+                  .sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime())
+                  .map(bank => (
+                    <BankDisplayCard
+                      key={bank.id}
+                      bank={bank}
+                      onEdit={onEditBank}
+                      onPublish={onPublishTest}
+                    />
+                  ))}
+              </div>
             ) : (
               <EmptyState
                 icon={FileText}
-                title="No drafts available"
-                desc="Use the AI generator to create new tests."
-                action={() => onNavigate('createBank')}
-                actionLabel="Go to Generator"
+                title="No Drafts Found"
+                desc={searchQuery ? "Try adjusting your search terms." : "You haven't created any assessments yet."}
+                action={!searchQuery ? () => onNavigate('createBank') : undefined}
+                actionLabel="Create First Assessment"
               />
             )}
           </div>
-        </div>
-
-        {/* Published Column */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
-              <Share2 className="w-5 h-5 text-green-600 dark:text-green-500" />
-            </div>
-            <h3 className="text-xl font-semibold">Live & Past Tests</h3>
-          </div>
-
-          <div className="space-y-4">
-            {publishedTests.length > 0 ? (
-              publishedTests
-                .sort((a, b) => {
-                  // Sort: Active first, then by date
-                  const aActive = !a.endDate || new Date(a.endDate) > new Date();
-                  const bActive = !b.endDate || new Date(b.endDate) > new Date();
-                  if (aActive && !bActive) return -1;
-                  if (!aActive && bActive) return 1;
-                  return 0;
-                })
-                .map(test => (
-                  <PublishedItem
-                    key={test.id}
-                    test={test}
-                    onRevoke={onRevokeTest}
-                    onAnalytics={onViewTestAnalytics}
-                  />
-                ))
+        ) : (
+          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            {filteredTests.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {filteredTests
+                  .sort((a, b) => new Date(b.endDate || 0).getTime() - new Date(a.endDate || 0).getTime()) // Sort by deadline roughly
+                  .map(test => (
+                    <PublishedDisplayCard
+                      key={test.id}
+                      test={test}
+                      onRevoke={onRevokeTest}
+                      onAnalytics={onViewTestAnalytics}
+                    />
+                  ))}
+              </div>
             ) : (
               <EmptyState
-                icon={Share2}
-                title="No tests published"
-                desc="Published tests will appear here."
+                icon={Rocket}
+                title="No Live Tests"
+                desc={searchQuery ? "No matching tests found." : "Launch a test from your Drafts to see it here."}
               />
             )}
           </div>
-        </div>
-
+        )}
       </div>
+
     </div>
   );
 };
 
 // Helper for empty states
 const EmptyState = ({ icon: Icon, title, desc, action, actionLabel }: any) => (
-  <div className="flex flex-col items-center justify-center p-8 border border-dashed rounded-xl bg-muted/10 text-center animate-in zoom-in-95">
-    <div className="p-3 bg-muted rounded-full mb-3">
-      <Icon className="w-6 h-6 text-muted-foreground" />
+  <div className="flex flex-col items-center justify-center p-12 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl bg-zinc-50/50 dark:bg-zinc-900/20 text-center animate-in zoom-in-95">
+    <div className="p-4 bg-white dark:bg-zinc-800 rounded-full mb-4 shadow-sm">
+      <Icon className="w-8 h-8 text-zinc-400" />
     </div>
-    <h4 className="font-medium text-foreground">{title}</h4>
-    <p className="text-sm text-muted-foreground mt-1 max-w-[200px]">{desc}</p>
+    <h4 className="font-bold text-lg text-foreground mb-2">{title}</h4>
+    <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-6">{desc}</p>
     {action && (
-      <Button variant="link" onClick={action} className="mt-2 text-primary">
+      <Button onClick={action} variant="outline" className="border-primary/20 text-primary hover:bg-primary/5">
         {actionLabel}
       </Button>
     )}

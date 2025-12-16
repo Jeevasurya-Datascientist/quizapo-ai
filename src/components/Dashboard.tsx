@@ -1,28 +1,35 @@
+
 // src/components/Dashboard.tsx
 
 import React, { useMemo } from 'react';
-import { AppUser, Test, GeneratedMcqSet, TestAttempt } from '../types';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { 
-  BarChart3, 
-  Users, 
-  FileText, 
-  TrendingUp, 
-  Activity, 
+import { AppUser, Test, GeneratedMcqSet, TestAttempt, View, QuestionBank } from '../types';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
+import {
+  BarChart3,
+  Users,
+  FileText,
+  TrendingUp,
+  Activity,
   ArrowRight,
   Bell,
   User,
-  ShieldCheck, 
-  Star, 
-  Award, 
-  Zap, 
-  Crown
+  ShieldCheck,
+  Star,
+  Award,
+  Zap,
+  Crown,
+  LayoutDashboard,
+  Rocket,
+  PlusCircle,
+  Network,
+  Siren
 } from 'lucide-react';
 import { Button } from './ui/button';
-import { cn } from '../lib/utils'; // <--- FIXED: Imported cn here
+import { cn } from '../lib/utils';
+import { Badge } from './ui/badge';
 
-// --- HELPER: Badge Logic (Inlined for simplicity) ---
-interface Badge {
+// --- HELPER: Badge Logic ---
+interface UserBadge {
   id: string;
   label: string;
   icon: any;
@@ -30,101 +37,122 @@ interface Badge {
   description: string;
 }
 
-const getUserBadges = (user: AppUser, publishedTests: Test[]): Badge[] => {
-  const badges: Badge[] = [];
+const getUserBadges = (user: AppUser, publishedTests: Test[]): UserBadge[] => {
+  const badges: UserBadge[] = [];
   const followerCount = user.followers?.length || 0;
   const testCount = publishedTests.length;
 
   if (user.isIdVerified) {
-    badges.push({ id: 'trustee', label: 'Trustee', icon: ShieldCheck, color: 'text-blue-500 bg-blue-100 border-blue-200', description: 'Identity Verified' });
-  }
-  if (followerCount >= 10 && followerCount < 50) {
-    badges.push({ id: 'rising-star', label: 'Rising Star', icon: Star, color: 'text-yellow-600 bg-yellow-100 border-yellow-200', description: 'Growing Community' });
+    badges.push({ id: 'trustee', label: 'Verified', icon: ShieldCheck, color: 'bg-blue-100 text-blue-700 border-blue-200', description: 'Identity Verified' });
   }
   if (followerCount >= 50) {
-    badges.push({ id: 'influencer', label: 'Influencer', icon: Crown, color: 'text-purple-600 bg-purple-100 border-purple-200', description: 'Major Impact' });
+    badges.push({ id: 'influencer', label: 'Influencer', icon: Crown, color: 'bg-purple-100 text-purple-700 border-purple-200', description: 'Major Impact' });
   }
   if (testCount >= 5) {
-    badges.push({ id: 'prolific', label: 'Prolific', icon: Zap, color: 'text-amber-600 bg-amber-100 border-amber-200', description: 'High Output' });
-  }
-  if (user.collegeName && user.role === 'faculty') {
-    badges.push({ id: 'qualified', label: 'Qualified', icon: Award, color: 'text-green-600 bg-green-100 border-green-200', description: 'Academic' });
+    badges.push({ id: 'prolific', label: 'Prolific', icon: Zap, color: 'bg-amber-100 text-amber-700 border-amber-200', description: 'High Output' });
   }
   return badges;
 };
 
-// --- COMPONENT: UserBanner ---
-const UserBanner: React.FC<{ 
-  user: AppUser; 
-  publishedTests: Test[]; 
-  onNavigateToNotifications: () => void;
-  onNavigateToProfile: () => void;
-}> = ({ user, publishedTests, onNavigateToNotifications, onNavigateToProfile }) => {
+// --- COMPONENT: DashboardHero ---
+const DashboardHero: React.FC<{
+  user: AppUser;
+  publishedTests: Test[];
+  onNavigate: (view: View) => void;
+}> = ({ user, publishedTests, onNavigate }) => {
   const badges = useMemo(() => getUserBadges(user, publishedTests), [user, publishedTests]);
-  const followerCount = user.followers?.length || 0;
-  const isHighLevel = followerCount >= 50; // Threshold for animated banner
+  const isFaculty = user.role === 'faculty';
 
   return (
-    <div className={cn(
-      "relative overflow-hidden rounded-3xl p-6 md:p-10 transition-all duration-1000 border shadow-sm",
-      !isHighLevel && "bg-gradient-to-br from-white via-gray-50 to-gray-100 dark:from-gray-800 dark:via-gray-900 dark:to-black border-border/50",
-      isHighLevel && "bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 animate-gradient-xy text-white shadow-2xl shadow-purple-500/20"
-    )}>
-      {isHighLevel && (
-        <div className="absolute inset-0 opacity-20 pointer-events-none">
-          <div className="absolute top-0 left-0 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] brightness-100 contrast-150 mix-blend-overlay"></div>
-        </div>
-      )}
+    <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700 text-white shadow-xl dark:shadow-purple-900/20">
+      {/* Abstract Pattern Overlay */}
+      <div className="absolute inset-0 opacity-10 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay pointer-events-none"></div>
+      <div className="absolute -top-24 -right-24 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
+      <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-indigo-900/30 rounded-full blur-3xl"></div>
 
-      <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div>
-          <h1 className={cn("text-3xl md:text-4xl font-bold tracking-tight mb-2", isHighLevel ? "text-white" : "text-foreground")}>
-            Hello, {user.name}
-          </h1>
-          
-          <div className="flex flex-wrap items-center gap-3">
-             <div className={cn(
-               "px-3 py-1 rounded-full text-xs font-mono font-medium border",
-               isHighLevel ? "bg-white/20 border-white/30 text-white" : "bg-muted text-muted-foreground border-border"
-             )}>
-                @{user.username}
-             </div>
-             
-             {badges.map(badge => (
-               <div key={badge.id} className={cn("flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold border shadow-sm cursor-help", isHighLevel ? "bg-white/90 text-purple-900 border-transparent" : badge.color)} title={badge.description}>
-                 <badge.icon className="w-3 h-3" />
-                 {badge.label}
-               </div>
-             ))}
+      <div className="relative z-10 p-6 md:p-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div className="space-y-4 max-w-2xl">
+          <div>
+            <div className="flex items-center gap-3 mb-2 opacity-90">
+              {user.collegeName && <span className="text-xs font-medium flex items-center gap-1"><Award className="w-3 h-3" /> {user.collegeName}</span>}
+            </div>
+            <h1 className="text-3xl md:text-5xl font-bold tracking-tight mb-2 leading-tight">
+              Welcome back, {user.name.split(' ')[0]}
+            </h1>
+            <p className="text-indigo-100/80 text-lg">
+              {isFaculty
+                ? "Your command center for assessments and student performance is ready."
+                : "Ready to test your knowledge today?"}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {badges.map(b => (
+              <div key={b.id} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold shadow-sm backdrop-blur-md border border-white/20 bg-white/20 text-white")}>
+                <b.icon className="w-3.5 h-3.5" /> {b.label}
+              </div>
+            ))}
+            {!badges.length && <div className="text-xs text-indigo-200/70 italic">Complete actions to earn badges</div>}
           </div>
         </div>
 
-        <div className="flex gap-3">
-           <Button variant={isHighLevel ? "secondary" : "outline"} className={cn(isHighLevel && "bg-white/20 text-white hover:bg-white/30 border-white/20")} onClick={onNavigateToNotifications}>
-             <Bell className="w-4 h-4 mr-2" /> Notifications
-           </Button>
-           <Button variant={isHighLevel ? "secondary" : "default"} className={cn(isHighLevel && "bg-white text-purple-600 hover:bg-gray-100")} onClick={onNavigateToProfile}>
-             <User className="w-4 h-4 mr-2" /> Profile
-           </Button>
+        <div className="flex flex-col gap-3 min-w-[200px]">
+          <Button variant="secondary" size="lg" className="w-full shadow-lg bg-white/95 text-indigo-700 hover:bg-white" onClick={() => onNavigate('profile')}>
+            <User className="w-4 h-4 mr-2" /> My Profile
+          </Button>
+          <Button variant="outline" className="w-full border-white/30 text-white hover:bg-white/10 hover:text-white" onClick={() => onNavigate('notifications')}>
+            <Bell className="w-4 h-4 mr-2" /> Notifications
+          </Button>
         </div>
       </div>
-      
-      {!isHighLevel && (
-        <div className="mt-6 max-w-md">
-           <div className="flex justify-between text-xs mb-1 text-muted-foreground">
-             <span>Next Milestone: Influencer Badge</span>
-             <span>{followerCount}/50 Followers</span>
-           </div>
-           <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
-             <div className="h-full bg-gradient-to-r from-blue-400 to-purple-500 transition-all duration-500" style={{ width: `${Math.min((followerCount / 50) * 100, 100)}%` }} />
-           </div>
-        </div>
-      )}
     </div>
   );
 };
 
-// --- MAIN COMPONENT: Dashboard ---
+// --- COMPONENT: StatCard ---
+const StatCard = ({ label, value, icon: Icon, colorClass, borderClass, onClick }: any) => (
+  <Card
+    className={cn("border-l-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer min-w-[140px]", borderClass)}
+    onClick={onClick}
+  >
+    <CardContent className="p-5 flex items-center justify-between">
+      <div>
+        <p className="text-sm font-medium text-muted-foreground mb-1">{label}</p>
+        <div className="text-2xl font-bold tracking-tight">{value}</div>
+      </div>
+      <div className={cn("p-3 rounded-xl bg-opacity-10", colorClass)}>
+        <Icon className="w-5 h-5 opacity-90" />
+      </div>
+    </CardContent>
+  </Card>
+);
+
+// --- COMPONENT: ActionCard ---
+const ActionCard = ({ title, desc, icon: Icon, onClick, gradient }: any) => (
+  <div
+    onClick={onClick}
+    className={cn(
+      "group relative overflow-hidden rounded-2xl p-6 cursor-pointer border border-border shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1",
+      "bg-white dark:bg-zinc-900"
+    )}
+  >
+    <div className={cn("absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity duration-300", gradient)}></div>
+    <div className="relative z-10 flex flex-col h-full justify-between">
+      <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center mb-4 text-white shadow-md", gradient)}>
+        <Icon className="w-6 h-6" />
+      </div>
+      <div>
+        <h3 className="font-bold text-lg mb-1 group-hover:text-primary transition-colors">{title}</h3>
+        <p className="text-sm text-muted-foreground">{desc}</p>
+      </div>
+      <div className="mt-4 flex items-center text-xs font-semibold uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity text-primary">
+        Open <ArrowRight className="w-3 h-3 ml-1" />
+      </div>
+    </div>
+  </div>
+);
+
+// --- MAIN COMPONENT ---
 interface DashboardProps {
   user: AppUser;
   publishedTests: Test[];
@@ -132,129 +160,153 @@ interface DashboardProps {
   testAttempts: TestAttempt[];
   followersCount: number;
   followingCount: number;
-  onNavigate: (view: any) => void;
+  onNavigate: (view: View) => void;
+  questionBanks: QuestionBank[];
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({
   user,
   publishedTests,
   generatedSets,
+  testAttempts,
   followersCount,
-  onNavigate
+  followingCount,
+  onNavigate,
+  questionBanks
 }) => {
-  const totalQuestions = publishedTests.reduce((acc, t) => acc + t.questions.length, 0);
+  // Use generic role logic if needed, but display unified view
 
-  const quickLinks = [
-    { label: 'Manage Content', desc: 'Drafts & Tests', icon: FileText, view: 'content', color: 'bg-blue-500/10 text-blue-600' },
-    { label: 'My Network', desc: 'Followers & Connections', icon: Users, view: 'network', color: 'bg-purple-500/10 text-purple-600' },
-    { label: 'Integrity Center', desc: 'Violations & Alerts', icon: Activity, view: 'integrity', color: 'bg-rose-500/10 text-rose-600' },
-    { label: 'Analytics', desc: 'Performance Data', icon: BarChart3, view: 'testAnalytics', color: 'bg-emerald-500/10 text-emerald-600' },
-  ];
+  // Calculate Stats
+  const activeTests = publishedTests.filter(t => !t.endDate || new Date(t.endDate) > new Date()).length;
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      
-      <UserBanner 
-        user={user} 
-        publishedTests={publishedTests} 
-        onNavigateToNotifications={() => onNavigate('notifications')}
-        onNavigateToProfile={() => onNavigate('profile')}
-      />
+    <div className="space-y-8 pb-12 animate-in fade-in duration-500 max-w-7xl mx-auto">
 
+      {/* 1. Hero */}
+      <DashboardHero user={user} publishedTests={publishedTests} onNavigate={onNavigate} />
+
+      {/* 2. Key Metrics Strip */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard label="Total Tests" value={publishedTests.length} sub="Published" icon={FileText} />
-        <StatsCard label="Questions Bank" value={totalQuestions} sub="Created" icon={Activity} />
-        <StatsCard label="Community" value={followersCount} sub="Followers" icon={Users} />
-        <StatsCard label="Drafts" value={generatedSets.length} sub="Unpublished" icon={FileText} />
+        <StatCard
+          label="Live Tests"
+          value={activeTests}
+          icon={Activity}
+          colorClass="bg-green-500/10 text-green-600"
+          borderClass="border-l-green-500"
+          onClick={() => onNavigate('content')}
+        />
+        <StatCard
+          label="Question Banks"
+          value={questionBanks.length}
+          icon={FileText}
+          colorClass="bg-blue-500/10 text-blue-600"
+          borderClass="border-l-blue-500"
+          onClick={() => onNavigate('content')}
+        />
+        <StatCard
+          label="Community"
+          value={followersCount}
+          icon={Users}
+          colorClass="bg-purple-500/10 text-purple-600"
+          borderClass="border-l-purple-500"
+          onClick={() => onNavigate('network')}
+        />
+        <StatCard
+          label="Integrity Score"
+          value="100%"
+          icon={ShieldCheck}
+          colorClass="bg-amber-500/10 text-amber-600"
+          borderClass="border-l-amber-500"
+          onClick={() => onNavigate('integrity')}
+        />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6">
-           <h3 className="text-xl font-bold flex items-center gap-2">
-             <TrendingUp className="w-5 h-5 text-primary" /> Management Console
-           </h3>
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {quickLinks.map((link) => (
-                <div key={link.view} onClick={() => onNavigate(link.view)} className="group flex items-center gap-4 p-4 border rounded-xl hover:bg-muted/50 transition-all cursor-pointer hover:border-primary/50 bg-card">
-                  <div className={`p-3 rounded-lg ${link.color}`}>
-                    <link.icon className="w-6 h-6" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-semibold group-hover:text-primary transition-colors">{link.label}</h4>
-                    <p className="text-sm text-muted-foreground">{link.desc}</p>
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
-                </div>
-              ))}
-           </div>
-
-           <Card>
-             <CardHeader>
-               <CardTitle className="text-base">Publishing Activity (Last 6 Months)</CardTitle>
-             </CardHeader>
-             <CardContent>
-               <div className="flex items-end justify-between h-32 gap-2 mt-2">
-                 {[40, 70, 30, 85, 50, 90].map((h, i) => (
-                   <div key={i} className="w-full bg-primary/10 rounded-t-sm relative group">
-                     <div className="absolute bottom-0 w-full bg-primary rounded-t-sm transition-all duration-1000 group-hover:bg-primary/80" style={{ height: `${h}%` }}></div>
-                   </div>
-                 ))}
-               </div>
-               <div className="flex justify-between mt-2 text-xs text-muted-foreground">
-                 <span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span>
-               </div>
-             </CardContent>
-           </Card>
+      {/* 3. Main Action Grid */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold tracking-tight flex items-center gap-2">
+            <LayoutDashboard className="w-5 h-5 text-muted-foreground" />
+            Command Console
+          </h2>
         </div>
 
-        <div className="space-y-6">
-           <Card className="h-full border-none shadow-none bg-transparent">
-             <div className="rounded-2xl bg-gradient-to-b from-primary/5 to-transparent p-6 border h-full">
-               <h3 className="font-bold mb-4">Profile Strength</h3>
-               <div className="space-y-4">
-                 <StrengthItem label="Identity Verified" active={user.isIdVerified} />
-                 <StrengthItem label="10+ Followers" active={followersCount >= 10} />
-                 <StrengthItem label="5+ Tests Published" active={publishedTests.length >= 5} />
-                 <StrengthItem label="50+ Followers (Aurora)" active={followersCount >= 50} />
-               </div>
-               
-               <div className="mt-8 pt-8 border-t border-border/50">
-                 <h3 className="font-bold mb-2">System Status</h3>
-                 <div className="flex items-center gap-2 text-sm text-green-600">
-                   <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                   All Systems Operational
-                 </div>
-               </div>
-             </div>
-           </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Unified Actions - Showing All Capabilities */}
+          <ActionCard
+            title="Content Library"
+            desc="Manage drafts, launch tests, and organize your question banks."
+            icon={FileText}
+            onClick={() => onNavigate('content')}
+            gradient="bg-gradient-to-br from-indigo-500 to-blue-600"
+          />
+          <ActionCard
+            title="Create Assessment"
+            desc="Generate new MCQs using AI or build them manually."
+            icon={PlusCircle}
+            onClick={() => onNavigate('createBank')}
+            gradient="bg-gradient-to-br from-emerald-500 to-teal-600"
+          />
+          <ActionCard
+            title="My Network"
+            desc="Connect with other faculty and manage your followers."
+            icon={Network}
+            onClick={() => onNavigate('network')}
+            gradient="bg-gradient-to-br from-violet-500 to-purple-600"
+          />
+          <ActionCard
+            title="Integrity Center"
+            desc="Monitor violations and manage test security alerts."
+            icon={Siren}
+            onClick={() => onNavigate('integrity')}
+            gradient="bg-gradient-to-br from-rose-500 to-red-600"
+          />
+
+          {/* Secondary Actions */}
+          <ActionCard
+            title="Performance Analytics"
+            desc="Deep dive into student performance and test statistics."
+            icon={BarChart3}
+            onClick={() => onNavigate('testAnalytics')}
+            gradient="bg-gradient-to-br from-amber-500 to-orange-600"
+          />
+
+          {/* Student-like actions available on same dash if desired, or hidden. 
+               User asked for "improved dashboard without role-based", so merging key student capability: "Take a Test" */}
+          <ActionCard
+            title="Take a Test"
+            desc="Enter a test ID or browse available tests."
+            icon={Rocket}
+            onClick={() => onNavigate('studentPortal')}
+            gradient="bg-gradient-to-br from-sky-500 to-cyan-600"
+          />
+          <ActionCard
+            title="My History"
+            desc="View your past attempts and certificates."
+            icon={FileText}
+            onClick={() => onNavigate('testHistory')}
+            gradient="bg-gradient-to-br from-lime-500 to-green-600"
+          />
+
         </div>
       </div>
+
+      {/* 4. Live Pulse / System Status */}
+      <div className="rounded-xl border bg-zinc-50 dark:bg-zinc-900/50 p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <div className="w-3 h-3 bg-green-500 rounded-full animate-ping absolute"></div>
+            <div className="w-3 h-3 bg-green-500 rounded-full relative"></div>
+          </div>
+          <div>
+            <h4 className="font-semibold text-sm">System Operational</h4>
+            <p className="text-xs text-muted-foreground">All systems running smoothly. JS Corp Integrity Check Passed.</p>
+          </div>
+        </div>
+        <div className="text-xs text-muted-foreground font-mono">
+          {new Date().toLocaleDateString()} • v2.1.0-CommandCenter
+        </div>
+      </div>
+
     </div>
   );
 };
-
-const StatsCard = ({ label, value, sub, icon: Icon }: any) => (
-  <Card>
-    <CardContent className="p-6">
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-sm font-medium text-muted-foreground">{label}</p>
-        <Icon className="w-4 h-4 text-muted-foreground" />
-      </div>
-      <div className="text-2xl font-bold">{value}</div>
-      <p className="text-xs text-muted-foreground mt-1">{sub}</p>
-    </CardContent>
-  </Card>
-);
-
-// --- COMPONENT: StrengthItem ---
-const StrengthItem = ({ label, active }: { label: string, active: boolean }) => (
-  <div className="flex items-center gap-3">
-    <div className={cn(
-      "w-6 h-6 rounded-full flex items-center justify-center text-xs border",
-      active ? "bg-green-500 text-white border-green-600" : "bg-muted text-muted-foreground"
-    )}>
-      {active ? "✓" : ""}
-    </div>
-    <span className={cn("text-sm", active ? "font-medium text-foreground" : "text-muted-foreground")}>{label}</span>
-  </div>
-);

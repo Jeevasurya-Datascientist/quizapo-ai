@@ -82,7 +82,8 @@ service cloud.firestore {
 
     match /tests/{testId} {
       allow read: if isAuthenticated();
-      allow create, update, delete: if isAuthenticated() && request.resource.data.facultyId == request.auth.uid;
+      allow create, update: if isAuthenticated() && request.resource.data.facultyId == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.facultyId == request.auth.uid;
     }
 
     match /testAttempts/{attemptId} {

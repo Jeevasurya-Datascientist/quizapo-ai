@@ -15,6 +15,7 @@ import {
   deleteDoc,
   arrayRemove,
   getDoc,
+  limit,
   writeBatch
 } from "firebase/firestore";
 import {
@@ -49,6 +50,8 @@ import { Certificate } from './components/Certificate';
 
 // --- Modular Components ---
 import { Dashboard } from './components/Dashboard';
+import { NetworkPage } from './components/NetworkPage';
+import { followUser, unfollowUser } from './services/firebase';
 import { ContentLibrary } from './components/ContentLibrary';
 import { NetworkCenter } from './components/NetworkCenter';
 import { IntegrityCenter } from './components/IntegrityCenter';
@@ -104,6 +107,31 @@ const App: React.FC = () => {
   }, []);
 
   // --- 2. Data State (Persisted/Cached) ---
+  const [allUsers, setAllUsers] = useState<AppUser[]>([]);
+
+  // Fetch users for network page
+  useEffect(() => {
+    if (!currentUser) return;
+    const fetchUsers = async () => {
+      // Simple fetch for now - in prod use pagination/search
+      const q = query(collection(db, 'users'), limit(50));
+      const snap = await getDocs(q);
+      const users = snap.docs.map(d => d.data() as AppUser);
+      setAllUsers(users);
+    };
+    fetchUsers();
+  }, [currentUser]);
+
+  const handleFollow = async (targetId: string) => {
+    if (!currentUser) return;
+    await followUser(currentUser.id, targetId);
+    // Optimistic Update
+    setCurrentUser(prev => prev ? ({ ...prev, following: [...prev.following, targetId] }) : null);
+  };
+
+  // Duplicate handleUnfollow removed from here (it exists at line 494)
+
+
   const [userMetadata, setUserMetadata] = useState<AppUser[]>(() => getInitialState('userMetadata', []));
   const [questionBanks, setQuestionBanks] = useState<QuestionBank[]>([]);
   const [testHistory, setTestHistory] = useState<TestAttempt[]>(() => getInitialState('testHistory', []));
@@ -557,7 +585,32 @@ const App: React.FC = () => {
     switch (view) {
       case 'dashboard':
       case 'studentPortal': case 'facultyPortal':
-        return <Dashboard user={currentUser} publishedTests={publishedTests} generatedSets={[]} testAttempts={userAttempts} followersCount={currentUser.followers?.length || 0} followingCount={currentUser.following.length} onNavigate={handleNavigate} />;
+        return <Dashboard
+          user={currentUser}
+          publishedTests={publishedTests}
+          questionBanks={questionBanks}
+          generatedSets={[]}
+          testAttempts={userAttempts}
+          followersCount={currentUser.followers?.length || 0}
+          followingCount={currentUser.following.length}
+          onNavigate={handleNavigate}
+        />;
+
+      case 'network':
+        return <NetworkPage
+          currentUser={currentUser}
+          allUsers={allUsers}
+          onFollow={handleFollow}
+          onUnfollow={handleUnfollow}
+        />;
+
+      case 'network':
+        return <NetworkPage
+          currentUser={currentUser}
+          allUsers={allUsers}
+          onFollow={handleFollow}
+          onUnfollow={handleUnfollow}
+        />;
 
       case 'content':
         return <ContentLibrary

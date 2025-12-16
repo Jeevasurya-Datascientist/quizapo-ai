@@ -32,9 +32,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onLogout, onBack
           &larr; Back to Dashboard
         </button>
       </div>
-      
+
       <div className="mb-8 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
         <h3 className="text-xl font-bold">{user.name}</h3>
+        <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400 mb-1">@{user.username}</p>
         <p className="text-gray-500 dark:text-gray-400">{user.email}</p>
         <span className="mt-2 inline-block px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200 text-xs font-semibold rounded-full capitalize">{user.role}</span>
       </div>
@@ -52,19 +53,19 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onLogout, onBack
           buttonText="Toggle"
           onClick={() => alert('Theme toggle functionality not yet implemented.')}
         />
-         <ProfileOption
+        <ProfileOption
           title="Export My Data"
           description="Download an archive of all your data."
           buttonText="Export"
           onClick={() => alert('Export Data functionality not yet implemented.')}
         />
         <div className="!mt-8">
-            <ProfileOption
-              title="Logout"
-              description="Sign out of your Quizapo AI account."
-              buttonText="Logout"
-              onClick={onLogout}
-            />
+          <ProfileOption
+            title="Logout"
+            description="Sign out of your Quizapo AI account."
+            buttonText="Logout"
+            onClick={onLogout}
+          />
         </div>
       </div>
     </div>

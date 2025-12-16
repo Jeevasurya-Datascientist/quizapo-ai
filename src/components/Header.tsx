@@ -14,12 +14,12 @@ interface HeaderProps {
   notificationCount?: number; // NEW PROP
 }
 
-export const Header: React.FC<HeaderProps> = ({ 
-  user, 
-  activeView, 
-  onNavigate, 
-  onLogout, 
-  notificationCount = 0 
+export const Header: React.FC<HeaderProps> = ({
+  user,
+  activeView,
+  onNavigate,
+  onLogout,
+  notificationCount = 0
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -28,8 +28,8 @@ export const Header: React.FC<HeaderProps> = ({
       onClick={() => { onNavigate(view); setIsMenuOpen(false); }}
       className={cn(
         "flex items-center gap-2 px-4 py-2 rounded-md transition-colors w-full md:w-auto text-sm font-medium",
-        activeView === view 
-          ? "bg-primary/10 text-primary" 
+        activeView === view
+          ? "bg-primary/10 text-primary"
           : "text-muted-foreground hover:bg-muted hover:text-foreground"
       )}
     >
@@ -41,7 +41,7 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        
+
         {/* Logo */}
         <div className="flex items-center gap-2 cursor-pointer" onClick={() => onNavigate('dashboard')}>
           <div className="bg-primary text-primary-foreground p-1.5 rounded-lg font-bold text-xl">Q</div>
@@ -58,9 +58,9 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Right Actions */}
         <div className="flex items-center gap-2">
           {/* Notification Bell with Dot */}
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             className="relative"
             onClick={() => onNavigate('notifications')}
           >
@@ -77,12 +77,14 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Profile/Logout (Desktop) */}
           <div className="hidden md:flex gap-2">
-             <Button variant="ghost" size="sm" onClick={() => onNavigate('profile')}>
-                <User className="w-4 h-4 mr-2" /> Profile
-             </Button>
-             <Button variant="ghost" size="icon" onClick={onLogout} title="Logout">
-                <LogOut className="w-4 h-4" />
-             </Button>
+            <Button variant="ghost" size="sm" onClick={() => onNavigate('profile')}>
+              <User className="w-4 h-4 mr-2" />
+              <span className="hidden lg:inline">{user ? `@${user.username}` : 'Profile'}</span>
+              <span className="lg:hidden">Profile</span>
+            </Button>
+            <Button variant="ghost" size="icon" onClick={onLogout} title="Logout">
+              <LogOut className="w-4 h-4" />
+            </Button>
           </div>
         </div>
       </div>
@@ -96,7 +98,7 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="border-t my-2 pt-2">
             <NavItem view="profile" icon={User} label="Profile" />
             <button onClick={onLogout} className="flex items-center gap-2 px-4 py-2 text-destructive w-full text-sm font-medium">
-                <LogOut className="w-4 h-4" /> Logout
+              <LogOut className="w-4 h-4" /> Logout
             </button>
           </div>
         </div>
