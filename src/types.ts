@@ -21,6 +21,7 @@ export enum Taxonomy {
 export enum AiProvider {
   Gemini = "Gemini",
   Groq = "Groq",
+  OpenRouter = "OpenRouter",
 }
 
 export enum Role {
