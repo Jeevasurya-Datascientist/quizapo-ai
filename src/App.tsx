@@ -498,7 +498,7 @@ const App: React.FC = () => {
           publishedTests={publishedTests}
           onPublishTest={handlePublishTest}
           onRevokeTest={handleRevokeTest}
-          onViewTestAnalytics={(t) => { setAnalyticsTest(t); setView('testAnalytics'); }}
+          onViewTestAnalytics={(t) => handleViewTestAnalytics(t)}
           onNavigate={(v) => handleNavigate(v)}
           onEditBank={(id) => { setActiveBankId(id); setView('editBank'); }} // NEW Handler
         />;
