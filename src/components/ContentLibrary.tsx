@@ -5,7 +5,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import {
   FileText, Share2, Trash2, PlusCircle, Clock, Calendar, AlertCircle, X, CheckCircle2, Link as LinkIcon, Edit2, History,
-  Rocket, StopCircle, BarChart3, MoreVertical, Search
+  Rocket, StopCircle, BarChart3, MoreVertical, Search, Database
 } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { cn } from '../lib/utils';
@@ -315,6 +315,9 @@ export const ContentLibrary: React.FC<ContentLibraryProps> = ({
         <div className="flex gap-2 w-full md:w-auto">
           <Button variant="outline" onClick={() => onNavigate('testHistory')} className="border-zinc-200 flex-1 md:flex-none">
             <History className="w-4 h-4 mr-2" /> <span className="hidden sm:inline">Recent Activity</span><span className="inline sm:hidden">History</span>
+          </Button>
+          <Button variant="outline" onClick={() => onNavigate('myBanks')} className="border-zinc-200 flex-1 md:flex-none hover:bg-zinc-50">
+            <Database className="w-4 h-4 mr-2" /> <span className="hidden sm:inline">Question Banks</span><span className="inline sm:hidden">Banks</span>
           </Button>
           <Button onClick={() => onNavigate('createBank')} className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg shadow-indigo-500/20 text-white border-0 flex-1 md:flex-none">
             <PlusCircle className="w-4 h-4 mr-2" /> <span className="hidden sm:inline">Create New Assessment</span><span className="inline sm:hidden">New</span>

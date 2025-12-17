@@ -127,7 +127,8 @@ service cloud.firestore {
       // Read/Update/Delete own notifications
       allow read, update, delete: if isAuthenticated() && (
         resource.data.toUserId == request.auth.uid || 
-        resource.data.studentId == request.auth.uid // Legacy field support
+        resource.data.studentId == request.auth.uid || // Legacy field support
+        resource.data.facultyId == request.auth.uid // Allow sender to read/manage
       );
     }
 

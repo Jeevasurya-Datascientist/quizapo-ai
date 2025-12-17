@@ -138,7 +138,7 @@ export const NetworkPage: React.FC<NetworkPageProps> = ({ currentUser, allUsers 
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-500 to-fuchsia-500 opacity-0 group-hover:opacity-100 transition-opacity" />
                 <CardContent className="p-5 flex flex-col items-center text-center">
                     <Avatar className="h-20 w-20 border-4 border-white shadow-lg mb-3 group-hover:scale-105 transition-transform duration-300">
-                        <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} />
+                        <AvatarImage src={user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} />
                         <AvatarFallback className="bg-gradient-to-br from-violet-100 to-indigo-100 text-indigo-700 text-xl font-bold">
                             {user.name[0]}
                         </AvatarFallback>

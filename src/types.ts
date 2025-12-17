@@ -85,6 +85,7 @@ export interface AppUser {
   // Social 2.0
   followersCount: number;
   followingCount: number;
+  avatarUrl?: string; // DiceBear URL
 }
 
 export interface SocialConnection {
@@ -220,6 +221,7 @@ export interface AppNotification {
   studentEmail: string;
   facultyId: string; // Sender
   facultyName: string;
+  facultyUsername?: string;
 
   // Dynamic Content
   type?: 'test_invite' | 'message' | 'alert';

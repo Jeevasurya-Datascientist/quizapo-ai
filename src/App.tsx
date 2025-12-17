@@ -109,18 +109,16 @@ const App: React.FC = () => {
   // --- 2. Data State (Persisted/Cached) ---
   const [allUsers, setAllUsers] = useState<AppUser[]>([]);
 
-  // Fetch users for network page
+  // Listen to users for network page (Real-time)
   useEffect(() => {
     if (!currentUser) return;
-    const fetchUsers = async () => {
-      // Simple fetch for now - in prod use pagination/search
-      const q = query(collection(db, 'users'), limit(50));
-      const snap = await getDocs(q);
+    const q = query(collection(db, 'users'), limit(50));
+    const unsubscribe = onSnapshot(q, (snap) => {
       const users = snap.docs.map(d => d.data() as AppUser);
       setAllUsers(users);
-    };
-    fetchUsers();
-  }, [currentUser]);
+    });
+    return () => unsubscribe();
+  }, [currentUser?.id]); // Only re-sub if user ID changes (login/logout)
 
   // Duplicate handleUnfollow removed from here (it exists at line 494)
 
@@ -371,7 +369,7 @@ const App: React.FC = () => {
     if (currentUser.followers?.length) {
       currentUser.followers.forEach(fid => {
         const notifRef = doc(collection(db, "notifications"));
-        batch.set(notifRef, { id: notifRef.id, studentId: fid, studentEmail: "Follower", facultyId: currentUser.id, facultyName: currentUser.name, test: newTest, status: 'new', type: 'test_invite', timestamp: new Date().toISOString() });
+        batch.set(notifRef, { id: notifRef.id, studentId: fid, studentEmail: "Follower", facultyId: currentUser.id, facultyName: currentUser.name, facultyUsername: currentUser.username, test: newTest, status: 'new', type: 'test_invite', timestamp: new Date().toISOString() });
       });
     }
     await batch.commit();
@@ -412,7 +410,7 @@ const App: React.FC = () => {
       const ref = doc(collection(db, "notifications"));
       await setDoc(ref, {
         id: ref.id, studentId: target.id, studentEmail: target.email,
-        facultyId: currentUser.id, facultyName: currentUser.name,
+        facultyId: currentUser.id, facultyName: currentUser.name, facultyUsername: currentUser.username,
         title: "Message", message, type: 'message', status: 'new', timestamp: new Date().toISOString()
       });
       setIsMsgModalOpen(false); alert("Message sent.");
@@ -513,7 +511,25 @@ const App: React.FC = () => {
 
       case 'studentLogin': return activeTest ? <StudentLogin test={activeTest} currentUser={currentUser} onLogin={(info) => { setStudentInfo(info); setView('test'); }} /> : <ErrorMessage message="Session expired." />;
       case 'test': return (activeTest && studentInfo) ? <TestPage test={activeTest} student={studentInfo} onFinish={handleTestFinish} /> : <ErrorMessage message="Invalid Session." />;
-      case 'notifications': return <Notifications notifications={notifications} onStartTest={handleStartTest} onIgnoreTest={async (nid) => { await updateDoc(doc(db, "notifications", nid), { status: 'ignored' }); }} onBack={() => handleNavigate('dashboard')} />;
+      case 'notifications':
+        return <Notifications
+          notifications={notifications}
+          onStartTest={handleStartTest}
+          onMarkRead={async (nid) => {
+            await updateDoc(doc(db, "notifications", nid), { status: 'read' });
+          }}
+          onDismiss={async (nid) => {
+            await updateDoc(doc(db, "notifications", nid), { status: 'ignored' });
+          }}
+          onMarkAllRead={async () => {
+            const batch = writeBatch(db);
+            notifications.filter(n => n.status === 'new').forEach(n => {
+              batch.update(doc(db, "notifications", n.id), { status: 'read' });
+            });
+            if (notifications.some(n => n.status === 'new')) await batch.commit();
+          }}
+          onBack={() => handleNavigate('dashboard')}
+        />;
 
       case 'testHistory':
         return <TestHistory

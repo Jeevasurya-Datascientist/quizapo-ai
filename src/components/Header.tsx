@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Menu, X, LogOut, User, Bell, LayoutDashboard, Database, Network } from 'lucide-react';
 import { Button } from './ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { View, AppUser } from '../types';
 import { cn } from '../lib/utils';
 
@@ -77,10 +78,12 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Profile/Logout (Desktop) */}
           <div className="hidden md:flex gap-2">
-            <Button variant="ghost" size="sm" onClick={() => onNavigate('profile')}>
-              <User className="w-4 h-4 mr-2" />
+            <Button variant="ghost" size="sm" onClick={() => onNavigate('profile')} className="pl-0 gap-2">
+              <Avatar className="w-8 h-8 border border-white/20">
+                <AvatarImage src={user?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username}`} />
+                <AvatarFallback>{user?.username?.[0]?.toUpperCase()}</AvatarFallback>
+              </Avatar>
               <span className="hidden lg:inline">{user ? `@${user.username}` : 'Profile'}</span>
-              <span className="lg:hidden">Profile</span>
             </Button>
             <Button variant="ghost" size="icon" onClick={onLogout} title="Logout">
               <LogOut className="w-4 h-4" />
