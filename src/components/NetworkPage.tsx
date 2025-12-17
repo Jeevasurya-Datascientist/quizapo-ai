@@ -73,7 +73,7 @@ export const NetworkPage: React.FC<NetworkPageProps> = ({ currentUser, allUsers 
     const handleAction = async (action: string, targetUser: AppUser, reqId?: string) => {
         setLoadingId(targetUser.id);
         try {
-            if (action === 'follow') await socialService.sendFollowRequest(currentUser.id, targetUser.id);
+            if (action === 'follow') await socialService.sendFollowRequest(currentUser.id, targetUser.id, currentUser.name, currentUser.email);
             else if (action === 'accept') await socialService.acceptRequest(reqId!, targetUser.id, currentUser.id);
             else if (action === 'accept_followback') await socialService.finalizeConnection(reqId!, currentUser.id, targetUser.id);
             else if (action === 'reject') await socialService.rejectRequest(reqId!);

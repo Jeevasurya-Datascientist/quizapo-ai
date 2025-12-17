@@ -16,19 +16,13 @@ import { FollowRequest, AppUser, SocialConnection } from '../types';
 export const socialService = {
 
     // 1. Send Initial Follow Request
-    async sendFollowRequest(fromUserId: string, toUserId: string) {
+    async sendFollowRequest(fromUserId: string, toUserId: string, fromUserName?: string, fromUserEmail?: string) {
         // Deterministic ID to prevent duplicates
         const requestId = `${fromUserId}_${toUserId}`;
         const newReqRef = doc(db, 'follow_requests', requestId);
 
         // Check availability strictly
         const docSnap = await getDocs(query(collection(db, 'follow_requests'), where('fromUserId', '==', fromUserId), where('toUserId', '==', toUserId)));
-
-        // If exact ID logic is preferred:
-        // const docSnap = await getDoc(newReqRef); 
-        // But query is safer if we ever messed up IDs before. 
-        // Let's rely on the ID for the NEW write, but check query for existing loose ends? 
-        // Actually, let's trust the ID for the new system.
 
         await runTransaction(db, async (transaction) => {
             const existingDoc = await transaction.get(newReqRef);
@@ -42,13 +36,16 @@ export const socialService = {
             }
 
             // Allow re-creation or status reset if needed, but for now strict set.
-            transaction.set(newReqRef, {
+            const newReq: FollowRequest = {
                 id: requestId,
                 fromUserId,
+                fromUserName,
+                fromUserEmail,
                 toUserId,
                 status: 'pending',
                 createdAt: new Date().toISOString()
-            });
+            };
+            transaction.set(newReqRef, newReq);
         });
 
         return { id: requestId, fromUserId, toUserId, status: 'pending' };
