@@ -378,3 +378,84 @@ export const generateMcqs = async (
 
   return _generateWithOpenRouter(fullData);
 };
+/* =========================
+   AI HELPER (Single Question)
+   ========================= */
+
+export const assistWithQuestion = async (
+  currentQuestion: Partial<MCQ>,
+  action: 'improve' | 'generate_options' | 'fix_grammar',
+  topic: string
+): Promise<MCQ> => {
+  const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+  if (!apiKey) throw new Error("Groq API key missing.");
+
+  let prompt = "";
+
+  if (action === 'improve') {
+    prompt = `
+      Act as an expert exam setter. Improve the following MCQ.
+      Topic: "${topic}"
+      Current Question: "${currentQuestion.question}"
+      Current Options: ${JSON.stringify(currentQuestion.options)}
+      Explanation: "${currentQuestion.explanation}"
+
+      Goal: Make it more clear, academic, and challenging but fair.
+      Return valid JSON with the improved "question", "options" (4 items), "answer", and "explanation".
+    `;
+  } else if (action === 'generate_options') {
+    prompt = `
+      Act as an expert exam setter.
+      Topic: "${topic}"
+      Question: "${currentQuestion.question}"
+      
+      Goal: Generate 4 high-quality distractors (options) and identify the correct answer. Provide a short explanation.
+      Return valid JSON with "question" (same as input), "options", "answer", and "explanation".
+    `;
+  } else if (action === 'fix_grammar') {
+    prompt = `
+      Fix grammar and spelling for the following MCQ. Do not change the meaning.
+      Question: "${currentQuestion.question}"
+      Options: ${JSON.stringify(currentQuestion.options)}
+      Explanation: "${currentQuestion.explanation}"
+      
+      Return valid JSON with corrected fields.
+    `;
+  }
+
+  prompt += `\nReturn ONLY raw JSON. No markdown.`;
+
+  const response = await fetch(
+    "https://api.groq.com/openai/v1/chat/completions",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.1,
+        max_tokens: 4000,
+        response_format: { type: "json_object" }
+      })
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Groq API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const text = data.choices?.[0]?.message?.content;
+  if (!text) throw new Error("Empty Groq response");
+
+  let json;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    json = JSON.parse(repairJson(text));
+  }
+  return json as MCQ;
+}

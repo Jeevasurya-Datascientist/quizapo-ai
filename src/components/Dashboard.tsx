@@ -22,7 +22,8 @@ import {
   Rocket,
   PlusCircle,
   Network,
-  Siren
+  Siren,
+  PenTool
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn } from '../lib/utils';
@@ -241,10 +242,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
           />
           <ActionCard
             title="Create Assessment"
-            desc="Generate new MCQs using AI or build them manually."
+            desc="Generate new MCQs using AI."
             icon={PlusCircle}
             onClick={() => onNavigate('createBank')}
             gradient="bg-gradient-to-br from-emerald-500 to-teal-600"
+          />
+          <ActionCard
+            title="Manual Creator"
+            desc="Build specific questions from scratch with fine-grained control."
+            icon={PenTool}
+            onClick={() => onNavigate('manualCreator')}
+            gradient="bg-gradient-to-br from-pink-500 to-rose-600"
           />
           <ActionCard
             title="My Network"

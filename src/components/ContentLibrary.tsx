@@ -5,7 +5,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import {
   FileText, Share2, Trash2, PlusCircle, Clock, Calendar, AlertCircle, X, CheckCircle2, Link as LinkIcon, Edit2, History,
-  Rocket, StopCircle, BarChart3, MoreVertical, Search, Database
+  Rocket, StopCircle, BarChart3, MoreVertical, Search, Database, PenTool
 } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { cn } from '../lib/utils';
@@ -312,15 +312,18 @@ export const ContentLibrary: React.FC<ContentLibraryProps> = ({
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Command Center</h1>
           <p className="text-sm sm:text-base text-muted-foreground">Manage your assessments and monitor live tests.</p>
         </div>
-        <div className="flex gap-2 w-full md:w-auto">
-          <Button variant="outline" onClick={() => onNavigate('testHistory')} className="border-zinc-200 flex-1 md:flex-none">
-            <History className="w-4 h-4 mr-2" /> <span className="hidden sm:inline">Recent Activity</span><span className="inline sm:hidden">History</span>
+        <div className="flex flex-wrap gap-2 w-full md:w-auto mt-4 md:mt-0">
+          <Button variant="outline" onClick={() => onNavigate('testHistory')} className="border-zinc-200 flex-grow md:flex-none basis-[48%] md:basis-auto">
+            <History className="w-4 h-4 mr-2" /> <span className="inline">History</span>
           </Button>
-          <Button variant="outline" onClick={() => onNavigate('myBanks')} className="border-zinc-200 flex-1 md:flex-none hover:bg-zinc-50">
-            <Database className="w-4 h-4 mr-2" /> <span className="hidden sm:inline">Question Banks</span><span className="inline sm:hidden">Banks</span>
+          <Button variant="outline" onClick={() => onNavigate('myBanks')} className="border-zinc-200 flex-grow md:flex-none basis-[48%] md:basis-auto hover:bg-zinc-50">
+            <Database className="w-4 h-4 mr-2" /> <span className="inline">Banks</span>
           </Button>
-          <Button onClick={() => onNavigate('createBank')} className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg shadow-indigo-500/20 text-white border-0 flex-1 md:flex-none">
-            <PlusCircle className="w-4 h-4 mr-2" /> <span className="hidden sm:inline">Create New Assessment</span><span className="inline sm:hidden">New</span>
+          <Button variant="outline" onClick={() => onNavigate('manualCreator')} className="border-zinc-200 flex-grow md:flex-none basis-[48%] md:basis-auto hover:bg-zinc-50">
+            <PenTool className="w-4 h-4 mr-2" /> <span className="inline">Manual</span>
+          </Button>
+          <Button onClick={() => onNavigate('createBank')} className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg shadow-indigo-500/20 text-white border-0 flex-grow md:flex-none basis-[48%] md:basis-auto">
+            <PlusCircle className="w-4 h-4 mr-2" /> <span className="inline">AI Gen</span>
           </Button>
         </div>
       </div>

@@ -244,7 +244,7 @@ const App: React.FC = () => {
     }));
 
     // Social & Integrity
-    unsubscribes.push(onSnapshot(query(collection(db, "follow_requests"), where("facultyId", "==", currentUser.id), where("status", "==", "pending")), (s) => setFollowRequests(s.docs.map(d => d.data() as FollowRequest))));
+    unsubscribes.push(onSnapshot(query(collection(db, "follow_requests"), where("toUserId", "==", currentUser.id), where("status", "==", "pending")), (s) => setFollowRequests(s.docs.map(d => d.data() as FollowRequest))));
     // connectionRequests removed (legacy)
     unsubscribes.push(onSnapshot(query(collection(db, "violationAlerts"), where("facultyId", "==", currentUser.id), where("status", "==", "pending")), (s) => setViolationAlerts(s.docs.map(d => d.data() as ViolationAlert))));
     unsubscribes.push(onSnapshot(query(collection(db, "notifications"), where("facultyId", "==", currentUser.id), where("status", "==", "ignored")), (s) => setIgnoredByStudents(s.docs.map(d => d.data() as AppNotification))));
@@ -465,6 +465,103 @@ const App: React.FC = () => {
     setLatestTestResult(attempt); setActiveTest(null); setView('testResults');
   };
 
+  // --- Handlers: Manual Creator ---
+  const handleManualSave = async (mcqs: MCQ[]) => {
+    if (!currentUser) return;
+    if (mcqs.length === 0) { alert("Add at least one question."); return; }
+
+    const title = prompt("Enter a name for this Question Bank:", `Manual Set ${new Date().toLocaleDateString()}`);
+    if (!title) return;
+
+    setIsLoading(true);
+    try {
+      const newBank: QuestionBank = {
+        id: doc(collection(db, "questionBanks")).id,
+        facultyId: currentUser.id,
+        title: title,
+        description: `Manually created set with ${mcqs.length} questions.`,
+        questions: mcqs,
+        tags: ["Manual"],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      await setDoc(doc(db, "questionBanks", newBank.id), newBank);
+      setActiveBankId(newBank.id);
+      setView('editBank');
+    } catch (e: any) {
+      alert("Failed to save: " + e.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleExportPDF = (mcqs: MCQ[]) => {
+    if (!window.jspdf) { alert("PDF library not loaded."); return; }
+    const doc = new window.jspdf.jsPDF();
+    doc.setFontSize(16);
+    doc.text("Quizapo Assessment", 10, 10);
+    doc.setFontSize(11);
+
+    let y = 20;
+    mcqs.forEach((q, i) => {
+      if (y > 270) { doc.addPage(); y = 10; }
+      const questionText = doc.splitTextToSize(`${i + 1}. ${q.question}`, 180);
+      doc.text(questionText, 10, y);
+      y += 5 * questionText.length;
+
+      q.options.forEach((opt, oi) => {
+        if (y > 280) { doc.addPage(); y = 10; }
+        doc.text(`   ${String.fromCharCode(65 + oi)}. ${opt}`, 10, y);
+        y += 5;
+      });
+      y += 5;
+    });
+
+    // Answer Key
+    doc.addPage();
+    doc.setFontSize(14);
+    doc.text("Answer Key", 10, 10);
+    doc.setFontSize(11);
+    y = 20;
+    mcqs.forEach((q, i) => {
+      doc.text(`${i + 1}. ${q.answer}`, 10, y);
+      y += 6;
+    });
+
+    doc.save("manual-assessment.pdf");
+  };
+
+  const handleExportWord = (mcqs: MCQ[]) => {
+    if (!window.docx) { alert("Docx library not loaded."); return; }
+    const { Document, Packer, Paragraph, TextRun } = window.docx;
+
+    const children = [new Paragraph({ children: [new TextRun({ text: "Quizapo Assessment", bold: true, size: 32 })] })];
+
+    mcqs.forEach((q, i) => {
+      children.push(new Paragraph({ children: [new TextRun({ text: `\n${i + 1}. ${q.question}`, bold: true })] }));
+      q.options.forEach((opt, oi) => {
+        children.push(new Paragraph({ children: [new TextRun({ text: `   ${String.fromCharCode(65 + oi)}. ${opt}` })] }));
+      });
+      children.push(new Paragraph({ text: "" }));
+    });
+
+    children.push(new Paragraph({ children: [new TextRun({ text: "Answer Key", bold: true, size: 28, break: 1 })] }));
+
+    mcqs.forEach((q, i) => {
+      children.push(new Paragraph({ children: [new TextRun({ text: `${i + 1}. ${q.answer}` })] }));
+    });
+
+    const doc = new Document({ sections: [{ properties: {}, children }] });
+
+    Packer.toBlob(doc).then((blob: any) => {
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "manual-assessment.docx";
+      a.click();
+    });
+  };
+
   // --- Render ---
   const renderContent = () => {
     if (isLoading) return <LoadingSpinner />;
@@ -570,7 +667,12 @@ const App: React.FC = () => {
       case 'generator': return <McqGeneratorForm onGenerate={handleGenerateMcqs} isLoading={false} />;
       case 'results': return <div className="grid grid-cols-1 lg:grid-cols-2 gap-8"><McqGeneratorForm onGenerate={handleGenerateMcqs} isLoading={false} /><div className="bg-white p-6 rounded-lg shadow">{error ? <ErrorMessage message={error} /> : <McqList mcqs={mcqs} />}</div></div>;
 
-      case 'manualCreator': return <ManualMcqCreator onSaveSet={(mcqs) => { /* save logic */ }} onExportPDF={() => { }} onExportWord={() => { }} />;
+      case 'manualCreator':
+        return <ManualMcqCreator
+          onSaveSet={handleManualSave}
+          onExportPDF={handleExportPDF}
+          onExportWord={handleExportWord}
+        />;
 
       // Public Pages
       case 'about': return <AboutPage onBack={() => handleNavigate('dashboard')} />;
