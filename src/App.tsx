@@ -57,6 +57,7 @@ import { NetworkCenter } from './components/NetworkCenter';
 import { IntegrityCenter } from './components/IntegrityCenter';
 import { EditBankPage } from './components/EditBankPage';
 import { MyBanksPage } from './components/MyBanksPage';
+import { AboutPage, ContactPage, PrivacyPage, TermsPage } from './components/PublicPages';
 
 // --- Types & Services ---
 import { Role, View } from './types';
@@ -243,8 +244,8 @@ const App: React.FC = () => {
     }));
 
     // Social & Integrity
-    unsubscribes.push(onSnapshot(query(collection(db, "followRequests"), where("facultyId", "==", currentUser.id), where("status", "==", "pending")), (s) => setFollowRequests(s.docs.map(d => d.data() as FollowRequest))));
-    unsubscribes.push(onSnapshot(query(collection(db, "connectionRequests"), where("toFacultyId", "==", currentUser.id), where("status", "==", "pending")), (s) => setConnectionRequests(s.docs.map(d => d.data() as ConnectionRequest))));
+    unsubscribes.push(onSnapshot(query(collection(db, "follow_requests"), where("facultyId", "==", currentUser.id), where("status", "==", "pending")), (s) => setFollowRequests(s.docs.map(d => d.data() as FollowRequest))));
+    // connectionRequests removed (legacy)
     unsubscribes.push(onSnapshot(query(collection(db, "violationAlerts"), where("facultyId", "==", currentUser.id), where("status", "==", "pending")), (s) => setViolationAlerts(s.docs.map(d => d.data() as ViolationAlert))));
     unsubscribes.push(onSnapshot(query(collection(db, "notifications"), where("facultyId", "==", currentUser.id), where("status", "==", "ignored")), (s) => setIgnoredByStudents(s.docs.map(d => d.data() as AppNotification))));
 
@@ -570,6 +571,13 @@ const App: React.FC = () => {
       case 'results': return <div className="grid grid-cols-1 lg:grid-cols-2 gap-8"><McqGeneratorForm onGenerate={handleGenerateMcqs} isLoading={false} /><div className="bg-white p-6 rounded-lg shadow">{error ? <ErrorMessage message={error} /> : <McqList mcqs={mcqs} />}</div></div>;
 
       case 'manualCreator': return <ManualMcqCreator onSaveSet={(mcqs) => { /* save logic */ }} onExportPDF={() => { }} onExportWord={() => { }} />;
+
+      // Public Pages
+      case 'about': return <AboutPage onBack={() => handleNavigate('dashboard')} />;
+      case 'contact': return <ContactPage onBack={() => handleNavigate('dashboard')} />;
+      case 'privacy': return <PrivacyPage onBack={() => handleNavigate('dashboard')} />;
+      case 'terms': return <TermsPage onBack={() => handleNavigate('dashboard')} />;
+
       default: return <div className="flex h-screen items-center justify-center"><LoadingSpinner /></div>;
     }
   };

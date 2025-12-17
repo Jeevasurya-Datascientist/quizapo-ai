@@ -60,7 +60,11 @@ export type View =
   | 'myBanks'
   | 'createBank'
   | 'editBank'
-  | 'certificate';
+  | 'certificate'
+  | 'about'
+  | 'contact'
+  | 'privacy'
+  | 'terms';
 
 // --- User & Social Interfaces ---
 

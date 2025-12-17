@@ -9,6 +9,7 @@ import { Label } from './ui/label';
 import {
   User, Settings, Palette, Save, LogOut, Loader2, RefreshCw, Dice5
 } from 'lucide-react';
+import { useToast } from '../contexts/ToastContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -49,6 +50,7 @@ const AVATAR_STYLES = [
 export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onLogout, onBack }) => {
   const [activeTab, setActiveTab] = useState('profile');
   const [isSaving, setIsSaving] = useState(false);
+  const { toast } = useToast();
 
   // Avatar State
   const [avatarStyle, setAvatarStyle] = useState('adventurer');
@@ -72,11 +74,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onLogout, onBack
       await updateDoc(doc(db, 'users', user.id), {
         avatarUrl: previewUrl
       });
-      // Ideally show a toast here
-      alert("Avatar updated successfully!");
+      // UPDATE: Replaced native alert with custom toast
+      toast("Avatar updated successfully!", "success");
     } catch (error) {
-      console.error("Error updating avatar:", error);
-      alert("Failed to update avatar.");
+      console.error("Error saving avatar:", error);
+      toast("Failed to update avatar.", "error");
     } finally {
       setIsSaving(false);
     }
