@@ -100,7 +100,7 @@ const DashboardHero: React.FC<{
           <Button variant="secondary" size="lg" className="w-full shadow-lg bg-white/95 text-indigo-700 hover:bg-white" onClick={() => onNavigate('profile')}>
             <User className="w-4 h-4 mr-2" /> My Profile
           </Button>
-          <Button variant="outline" className="w-full border-white/30 text-white hover:bg-white/10 hover:text-white" onClick={() => onNavigate('notifications')}>
+          <Button variant="secondary" size="lg" className="w-full shadow-lg bg-white/95 text-indigo-700 hover:bg-white" onClick={() => onNavigate('notifications')}>
             <Bell className="w-4 h-4 mr-2" /> Notifications
           </Button>
         </div>
