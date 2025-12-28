@@ -9,7 +9,7 @@ export const LoadingSpinner: React.FC = () => {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-indigo-500/20 rounded-full blur-3xl animate-pulse" />
 
         <div className="loader-cube">
-          <div className="loader-face face-front">AI</div>
+          <div className="loader-face face-front">JS</div>
           <div className="loader-face face-back"></div>
           <div className="loader-face face-right"></div>
           <div className="loader-face face-left"></div>

@@ -23,6 +23,7 @@ import {
   signInWithPopup,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
   sendEmailVerification,
   signOut,
   User as FirebaseUser
@@ -47,6 +48,7 @@ import { ProfilePage } from './components/ProfilePage';
 import { EmailVerification } from './components/EmailVerification';
 import { SendNotificationModal } from './components/SendNotificationModal';
 import { Certificate } from './components/Certificate';
+import { LandingPage } from './components/LandingPage';
 
 // --- Modular Components ---
 import { Dashboard } from './components/Dashboard';
@@ -58,6 +60,7 @@ import { IntegrityCenter } from './components/IntegrityCenter';
 import { EditBankPage } from './components/EditBankPage';
 import { MyBanksPage } from './components/MyBanksPage';
 import { AboutPage, ContactPage, PrivacyPage, TermsPage } from './components/PublicPages';
+import { TeamPage } from './components/TeamPage';
 
 // --- Types & Services ---
 import { Role, View } from './types';
@@ -94,7 +97,7 @@ const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [view, setView] = useState<View>('auth');
+  const [view, setView] = useState<View>('landing');
   const [verificationEmail, setVerificationEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -175,9 +178,9 @@ const App: React.FC = () => {
   // --- User Sync with Realtime Listener ---
   useEffect(() => {
     if (!firebaseUser) {
-      if (view !== 'auth' && view !== 'emailVerification') {
+      if (view !== 'auth' && view !== 'emailVerification' && view !== 'landing' && view !== 'team' && view !== 'about' && view !== 'contact' && view !== 'privacy' && view !== 'terms') {
         setCurrentUser(null);
-        setView('auth');
+        setView('landing'); // Redirect to landing instead of auth for better UX? Or auth? Let's go to landing.
       }
       return;
     }
@@ -204,20 +207,23 @@ const App: React.FC = () => {
         if (isLoading) {
           const params = new URLSearchParams(window.location.search);
           const testId = params.get('testId');
-          if (testId && !activeTest) {
-            // ... (Keep existing Deep Linking Logic or simplify)
-            // For brevity, we trigger a separate handle for deep linking if needed, 
-            // or just let the view stay if it was already set.
-          }
+          // if (testId && !activeTest) { ... }
+
           if (['auth', 'idVerification', 'emailVerification'].includes(view)) {
             setView('dashboard');
           }
           setIsLoading(false);
+        } else if (view === 'auth') {
+          // Existing user logged in manually (or via Google) needs redirect
+          setView('dashboard');
         }
       } else {
-        // User doc missing? Force logout or handle error
-        signOut(auth);
-        setView('auth');
+        // User doc missing? Only force logout if we aren't already in Auth/Registration flow
+        // detailed check: if I am in 'auth', I might be registering via Google.
+        if (view !== 'auth') {
+          signOut(auth);
+          setView('auth');
+        }
       }
     }, (err) => {
       console.error("User snapshot error:", err);
@@ -263,7 +269,58 @@ const App: React.FC = () => {
   const studentTestHistory = useMemo(() => userAttempts, [userAttempts]);
 
   // --- Handlers: Auth ---
-  const handleLogin = async (e: string, p: string) => { try { const c = await signInWithEmailAndPassword(auth, e, p); return !c.user.emailVerified ? (await signOut(auth), "Verify Email") : null; } catch { return "Login Failed"; } };
+  // --- Handlers: Auth ---
+  const handleLogin = async (e: string, p: string) => {
+    try {
+      const c = await signInWithEmailAndPassword(auth, e, p);
+      if (!c.user.emailVerified) {
+        await signOut(auth);
+        return "Verify Email";
+      }
+
+      // Check if user profile exists in Firestore
+      const userDoc = await getDoc(doc(db, "users", c.user.uid));
+      if (!userDoc.exists()) {
+        await signOut(auth);
+        return "Account setup incomplete. Please contact support.";
+      }
+
+      return null;
+    } catch (err: any) {
+      console.error("Login Error Details:", err);
+      if (err.code === 'auth/invalid-credential') return "Invalid email or password";
+      if (err.code === 'auth/user-not-found') return "No user found with this email";
+      if (err.code === 'auth/wrong-password') return "Incorrect password";
+      if (err.code === 'auth/invalid-email') return "Invalid email address";
+      return "Login Failed: " + (err.message || "Unknown error");
+    }
+  };
+  const handleLogout = useCallback(async () => {
+    // 1. Immediate UI Feedback
+    setIsLoading(false);
+    setCurrentUser(null);
+    setFirebaseUser(null);
+    setView('landing');
+
+    // 2. Background Cleanup
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error("Logout error (background):", error);
+    }
+  }, []);
+
+  const handleForgotPassword = async (email: string) => {
+    try {
+      await sendPasswordResetEmail(auth, email);
+      return null;
+    } catch (e: any) {
+      console.error("Forgot Password Error:", e);
+      if (e.code === 'auth/user-not-found') return "Account not found.";
+      return e.message;
+    }
+  };
+
   const handleRegister = async (d: RegistrationData) => {
     try {
       const q = query(collection(db, "users"), where("username", "==", d.username));
@@ -298,8 +355,9 @@ const App: React.FC = () => {
       if (!d.googleUser && d.password) {
         await sendEmailVerification(u);
         await signOut(auth);
+        return { success: true, email: u.email!, requiresVerification: true };
       }
-      return { success: true, email: u.email! };
+      return { success: true, email: u.email!, requiresVerification: false };
     } catch (e: any) {
       console.error("Registration error:", e);
       if (e.code === 'permission-denied') return { success: false, error: "Permission denied. Session may have expired." };
@@ -566,7 +624,20 @@ const App: React.FC = () => {
   const renderContent = () => {
     if (isLoading) return <LoadingSpinner />;
     if (view === 'emailVerification') return <EmailVerification email={verificationEmail} onLoginNavigate={() => setView('auth')} />;
-    if (!currentUser) return <AuthPortal onLogin={handleLogin} onRegister={handleRegister} onGoogleSignIn={handleGoogleSignIn} onRegistrationSuccess={(e) => { setVerificationEmail(e); setView('emailVerification'); }} />;
+    if (view === 'landing') return <LandingPage onGetStarted={() => setView('auth')} onNavigate={handleNavigate} />;
+
+    // Explicit public pages for unauthenticated users
+    if (['team', 'about', 'contact', 'privacy', 'terms'].includes(view)) {
+      switch (view) {
+        case 'team': return <TeamPage onBack={() => handleNavigate(currentUser ? 'dashboard' : 'landing')} />; // Smart back
+        case 'about': return <AboutPage onBack={() => handleNavigate(currentUser ? 'dashboard' : 'landing')} onNavigate={handleNavigate} />;
+        case 'contact': return <ContactPage onBack={() => handleNavigate(currentUser ? 'dashboard' : 'landing')} onNavigate={handleNavigate} />;
+        case 'privacy': return <PrivacyPage onBack={() => handleNavigate(currentUser ? 'dashboard' : 'landing')} onNavigate={handleNavigate} />;
+        case 'terms': return <TermsPage onBack={() => handleNavigate(currentUser ? 'dashboard' : 'landing')} onNavigate={handleNavigate} />;
+      }
+    }
+
+    if (!currentUser) return <AuthPortal onLogin={handleLogin} onRegister={handleRegister} onGoogleSignIn={handleGoogleSignIn} onForgotPassword={handleForgotPassword} onRegistrationSuccess={(e) => { setVerificationEmail(e); setView('emailVerification'); }} />;
 
     switch (view) {
       case 'dashboard':
@@ -601,7 +672,7 @@ const App: React.FC = () => {
 
 
       case 'integrity': return <IntegrityCenter violationAlerts={violationAlerts} ignoredNotifications={ignoredByStudents} onGrantReattempt={async () => { }} />;
-      case 'profile': return <ProfilePage user={currentUser} onLogout={() => { signOut(auth); setView('auth'); }} onBack={() => handleNavigate('dashboard')} />;
+      case 'profile': return <ProfilePage user={currentUser} onLogout={handleLogout} onBack={() => handleNavigate('dashboard')} />;
 
       case 'testResults':
         const questionsToShow = latestTestResult?.questions || activeTest?.questions || publishedTests.find(t => t.id === latestTestResult?.testId)?.questions || [];
@@ -675,10 +746,11 @@ const App: React.FC = () => {
         />;
 
       // Public Pages
-      case 'about': return <AboutPage onBack={() => handleNavigate('dashboard')} />;
-      case 'contact': return <ContactPage onBack={() => handleNavigate('dashboard')} />;
-      case 'privacy': return <PrivacyPage onBack={() => handleNavigate('dashboard')} />;
-      case 'terms': return <TermsPage onBack={() => handleNavigate('dashboard')} />;
+      case 'about': return <AboutPage onBack={() => handleNavigate('dashboard')} onNavigate={handleNavigate} />;
+      case 'contact': return <ContactPage onBack={() => handleNavigate('dashboard')} onNavigate={handleNavigate} />;
+      case 'privacy': return <PrivacyPage onBack={() => handleNavigate('dashboard')} onNavigate={handleNavigate} />;
+      case 'terms': return <TermsPage onBack={() => handleNavigate('dashboard')} onNavigate={handleNavigate} />;
+      case 'team': return <TeamPage onBack={() => handleNavigate('dashboard')} />;
 
       default: return <div className="flex h-screen items-center justify-center"><LoadingSpinner /></div>;
     }
@@ -686,9 +758,9 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans">
-      {['auth', 'emailVerification', 'test', 'studentLogin'].includes(view) ? renderContent() : (
+      {['auth', 'emailVerification', 'test', 'studentLogin', 'landing', 'team'].includes(view) ? renderContent() : (
         <>
-          <Header user={currentUser} activeView={view} onNavigate={handleNavigate} onLogout={() => { signOut(auth); setView('auth'); }} notificationCount={notifications.filter(n => n.status === 'new').length} />
+          <Header user={currentUser} activeView={view} onNavigate={handleNavigate} onLogout={handleLogout} notificationCount={notifications.filter(n => n.status === 'new').length} />
           <main className="container mx-auto p-4 md:p-8 animate-in fade-in duration-300">
             {renderContent()}
           </main>

@@ -32,6 +32,7 @@ export enum Role {
 // --- Navigation Types ---
 
 export type View =
+  | 'landing'
   | 'auth'
   | 'emailVerification'
   | 'idVerification'
@@ -64,7 +65,8 @@ export type View =
   | 'about'
   | 'contact'
   | 'privacy'
-  | 'terms';
+  | 'terms'
+  | 'team';
 
 // --- User & Social Interfaces ---
 

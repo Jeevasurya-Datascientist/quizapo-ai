@@ -29,8 +29,9 @@ export interface RegistrationData {
 
 interface AuthPortalProps {
   onLogin: (email: string, pass: string) => Promise<string | null>;
-  onRegister: (data: RegistrationData) => Promise<{ success: boolean; error?: string; email?: string }>;
+  onRegister: (data: RegistrationData) => Promise<{ success: boolean; error?: string; email?: string; requiresVerification?: boolean }>;
   onGoogleSignIn: () => Promise<{ error?: string; isNewUser?: boolean; googleUser?: User }>;
+  onForgotPassword: (email: string) => Promise<string | null>;
   onRegistrationSuccess: (email: string) => void;
 }
 
@@ -61,12 +62,15 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({
   onLogin,
   onRegister,
   onGoogleSignIn,
+  onForgotPassword,
   onRegistrationSuccess,
 }) => {
   const [isLogin, setIsLogin] = useState(true);
+  const [isForgotPass, setIsForgotPass] = useState(false);
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   // Username Logic
   const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'error' | 'invalid'>('idle');
@@ -88,13 +92,14 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({
 
   useEffect(() => {
     setError(null);
+    setSuccessMsg(null);
     setStep(1);
     if (!isLogin && !isGoogleAuth) {
       setFormData(prev => ({ ...prev, name: '', email: '', username: '' }));
       setPassword('');
       setUsernameStatus('idle');
     }
-  }, [isLogin]);
+  }, [isLogin, isForgotPass]);
 
   useEffect(() => {
     setFormData(prev => ({ ...prev, state: '', district: '' }));
@@ -172,6 +177,10 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({
   };
 
   const validateStep = (currentStep: number) => {
+    if (isForgotPass) {
+      if (!formData.email || !formData.email.includes('@')) return "Enter a valid email.";
+      return null;
+    }
     if (isLogin) {
       if (!formData.email || !password) return "Please enter email and password.";
       return null;
@@ -215,17 +224,28 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({
 
     setLoading(true);
     try {
-      if (isLogin) {
-        const errorMsg = await onLogin(formData.email, password);
+      if (isForgotPass) {
+        const errorMsg = await onForgotPassword(formData.email.trim());
+        if (errorMsg) setError(errorMsg);
+        else setSuccessMsg(`Reset link sent to ${formData.email}. Please check your inbox.`);
+      } else if (isLogin) {
+        const errorMsg = await onLogin(formData.email.trim(), password);
         if (errorMsg) setError(errorMsg);
       } else {
         const res = await onRegister({
           ...formData,
+          email: formData.email.trim(),
           password: isGoogleAuth ? undefined : password,
           googleUser: googleUser || undefined
         });
-        if (res.error) setError(res.error);
-        else if (res.success && res.email) onRegistrationSuccess(res.email);
+
+        if (res.error) {
+          setError(res.error);
+        } else if (res.success && res.email) {
+          if (res.requiresVerification !== false) {
+            onRegistrationSuccess(res.email);
+          }
+        }
       }
     } catch (e) {
       setError("An unexpected error occurred.");
@@ -292,10 +312,10 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({
           {/* Form Header */}
           <div className="space-y-2 text-center lg:text-left">
             <h2 className="text-3xl font-bold tracking-tight">
-              {isLogin ? "Welcome back" : isGoogleAuth ? "Complete Setup" : "Create an account"}
+              {isForgotPass ? "Reset Password" : isLogin ? "Welcome back" : isGoogleAuth ? "Complete Setup" : "Create an account"}
             </h2>
             <p className="text-muted-foreground">
-              {isLogin
+              {isForgotPass ? "Enter your email to receive recovery instructions" : isLogin
                 ? "Enter your credentials to access your account"
                 : "Enter your details to get started with Quizapo"}
             </p>
@@ -306,6 +326,12 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({
               <Alert variant="destructive" className="animate-in slide-in-from-top-2">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            {successMsg && (
+              <Alert className="bg-green-50 text-green-700 border-green-200 animate-in slide-in-from-top-2">
+                <Check className="h-4 w-4" />
+                <AlertDescription>{successMsg}</AlertDescription>
               </Alert>
             )}
 
@@ -334,7 +360,7 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({
               </div>
             )}
 
-            {!isLogin && step === 1 && (
+            {!isForgotPass && !isLogin && step === 1 && (
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="reg-email">Email</Label>
@@ -358,7 +384,7 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({
               </div>
             )}
 
-            {!isLogin && step === 2 && (
+            {!isForgotPass && !isLogin && step === 2 && (
               <div className="space-y-4 animate-in slide-in-from-right-8 duration-300">
                 <div className="space-y-2">
                   <Label htmlFor="name">Full Name</Label>
@@ -421,7 +447,7 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({
               </div>
             )}
 
-            {!isLogin && step === 3 && (
+            {!isForgotPass && !isLogin && step === 3 && (
               <div className="space-y-4 animate-in slide-in-from-right-8 duration-300">
                 <div className="space-y-2">
                   <Label>Institution</Label>
@@ -459,69 +485,77 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({
               </div>
             )}
 
-            <div className="pt-2">
-              {isLogin ? (
-                <Button type="submit" disabled={loading} className="w-full h-11 text-base font-medium shadow-lg shadow-indigo-500/20 bg-indigo-600 hover:bg-indigo-700 transition-all rounded-full">
-                  {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Sign In"}
-                </Button>
-              ) : (
-                <div className="flex gap-3">
-                  {step > 1 && (
-                    <Button type="button" variant="outline" onClick={() => setStep(s => s - 1)} className="w-1/3 h-11 rounded-full border-gray-200">
-                      <ArrowLeft className="mr-2 h-4 w-4" /> Back
-                    </Button>
-                  )}
-                  {step < 3 ? (
-                    <Button
-                      type="button"
-                      onClick={handleNext}
-                      disabled={step === 2 && (usernameStatus === 'checking' || usernameStatus === 'taken' || usernameStatus === 'invalid')}
-                      className={cn("h-11 rounded-full bg-indigo-600 hover:bg-indigo-700 font-medium transition-all", step > 1 ? "w-2/3" : "w-full")}
-                    >
-                      Next Step <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  ) : (
-                    <Button type="submit" disabled={loading} className="w-full h-11 rounded-full bg-indigo-600 hover:bg-indigo-700 font-medium shadow-lg shadow-indigo-500/20">
-                      {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Create Account"}
-                    </Button>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-gray-200 dark:border-zinc-800" /></div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white dark:bg-black px-2 text-muted-foreground">Or continue with</span>
+            {!isForgotPass && (
+              <div className="pt-2">
+                {isLogin ? (
+                  <Button type="submit" disabled={loading} className="w-full h-11 text-base font-medium shadow-lg shadow-indigo-500/20 bg-indigo-600 hover:bg-indigo-700 transition-all rounded-full">
+                    {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Sign In"}
+                  </Button>
+                ) : (
+                  <div className="flex gap-3">
+                    {step > 1 && (
+                      <Button type="button" variant="outline" onClick={() => setStep(s => s - 1)} className="w-1/3 h-11 rounded-full border-gray-200">
+                        <ArrowLeft className="mr-2 h-4 w-4" /> Back
+                      </Button>
+                    )}
+                    {step < 3 ? (
+                      <Button
+                        type="button"
+                        onClick={handleNext}
+                        disabled={step === 2 && (usernameStatus === 'checking' || usernameStatus === 'taken' || usernameStatus === 'invalid')}
+                        className={cn("h-11 rounded-full bg-indigo-600 hover:bg-indigo-700 font-medium transition-all", step > 1 ? "w-2/3" : "w-full")}
+                      >
+                        Next Step <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    ) : (
+                      <Button type="submit" disabled={loading} className="w-full h-11 rounded-full bg-indigo-600 hover:bg-indigo-700 font-medium shadow-lg shadow-indigo-500/20">
+                        {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Create Account"}
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
-            </div>
+            )}
 
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleGoogleAuth}
-              disabled={loading}
-              className="w-full h-11 rounded-full border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-900 font-medium transition-all"
-            >
-              <svg className="w-5 h-5 mr-2" viewBox="0 0 48 48">
-                <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"></path>
-                <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C16.318 4 9.656 8.337 6.306 14.691z"></path>
-                <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.211 35.091 26.715 36 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"></path>
-                <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.087 5.571l6.19 5.238C42.011 35.091 44 30.025 44 24c0-1.341-.138-2.65-.389-3.917z"></path>
-              </svg>
-              Google
-            </Button>
+            {!isForgotPass && (
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-gray-200 dark:border-zinc-800" /></div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white dark:bg-black px-2 text-muted-foreground">Or continue with</span>
+                </div>
+              </div>
+            )}
 
-            <p className="text-center text-sm text-muted-foreground">
-              {isLogin ? "Don't have an account? " : "Already have an account? "}
-              <button
+            {!isForgotPass && (
+              <Button
                 type="button"
-                onClick={() => setIsLogin(!isLogin)}
-                className="font-semibold text-indigo-600 hover:underline"
+                variant="outline"
+                onClick={handleGoogleAuth}
+                disabled={loading}
+                className="w-full h-11 rounded-full border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-900 font-medium transition-all"
               >
-                {isLogin ? "Sign up" : "Sign in"}
-              </button>
-            </p>
+                <svg className="w-5 h-5 mr-2" viewBox="0 0 48 48">
+                  <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"></path>
+                  <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C16.318 4 9.656 8.337 6.306 14.691z"></path>
+                  <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.211 35.091 26.715 36 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"></path>
+                  <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.087 5.571l6.19 5.238C42.011 35.091 44 30.025 44 24c0-1.341-.138-2.65-.389-3.917z"></path>
+                </svg>
+                Google
+              </Button>
+            )}
+
+            {!isForgotPass && (
+              <p className="text-center text-sm text-muted-foreground">
+                {isLogin ? "Don't have an account? " : "Already have an account? "}
+                <button
+                  type="button"
+                  onClick={() => setIsLogin(!isLogin)}
+                  className="font-semibold text-indigo-600 hover:underline"
+                >
+                  {isLogin ? "Sign up" : "Sign in"}
+                </button>
+              </p>
+            )}
           </form>
         </div>
       </div>
