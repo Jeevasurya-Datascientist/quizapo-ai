@@ -112,6 +112,19 @@ const App: React.FC = () => {
     });
   }, []);
 
+  // Handling Deep Links & Auth Actions on Mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get('mode');
+    const oobCode = params.get('oobCode');
+
+    if (mode && oobCode) {
+      setAuthActionParams({ mode, oobCode });
+      setView('authAction');
+      setIsLoading(false);
+    }
+  }, []);
+
   // --- 2. Data State (Persisted/Cached) ---
   const [allUsers, setAllUsers] = useState<AppUser[]>([]);
 
@@ -183,9 +196,9 @@ const App: React.FC = () => {
   // --- User Sync with Realtime Listener ---
   useEffect(() => {
     if (!firebaseUser) {
-      if (view !== 'auth' && view !== 'emailVerification' && view !== 'landing' && view !== 'team' && view !== 'about' && view !== 'contact' && view !== 'privacy' && view !== 'terms') {
+      if (view !== 'auth' && view !== 'emailVerification' && view !== 'landing' && view !== 'team' && view !== 'about' && view !== 'contact' && view !== 'privacy' && view !== 'terms' && view !== 'authAction') {
         setCurrentUser(null);
-        setView('landing'); // Redirect to landing instead of auth for better UX? Or auth? Let's go to landing.
+        setView('landing');
       }
       return;
     }
@@ -213,15 +226,8 @@ const App: React.FC = () => {
           const params = new URLSearchParams(window.location.search);
           const testId = params.get('testId');
           const mode = params.get('mode');
-          const oobCode = params.get('oobCode');
-
-          // Handle Firebase Auth Actions (Reset Password, Verify Email)
-          if (mode && oobCode) {
-            setAuthActionParams({ mode, oobCode });
-            setView('authAction');
-            setIsLoading(false);
-            return;
-          }
+          // Handle Firebase Auth Actions handled by top-level useEffect now
+          // if (mode && oobCode) { ... }
 
           // if (testId && !activeTest) { ... }
 

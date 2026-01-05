@@ -26,6 +26,10 @@ export const AuthActionHandler: React.FC<AuthActionHandlerProps> = ({ mode, oobC
         try {
             if (mode === 'verifyEmail') {
                 await applyActionCode(auth, oobCode);
+                // Attempt to auto-reload user if they are logged in on this device
+                if (auth.currentUser) {
+                    await auth.currentUser.reload();
+                }
                 setStatus('success');
             } else if (mode === 'resetPassword') {
                 const userEmail = await verifyPasswordResetCode(auth, oobCode);
