@@ -493,6 +493,19 @@ const App: React.FC = () => {
     } catch (e) { console.error(e); alert("Failed to send."); }
   };
 
+
+
+  // --- Handlers: Career ---
+  const handleUpdateCareerGoal = async (roleId: string) => {
+    if (!currentUser) return;
+    try {
+      const goal = { targetRoleId: roleId, targetRoleTitle: roleId.replace('-', ' ').toUpperCase() };
+      await updateDoc(doc(db, 'users', currentUser.id), { careerGoal: goal });
+    } catch (e) {
+      console.error("Failed to save career goal", e);
+    }
+  };
+
   const handleNavigate = (target: View) => {
     setError(null); setIsLoading(true);
     setTimeout(() => { setView(target); setIsLoading(false); }, 200);
