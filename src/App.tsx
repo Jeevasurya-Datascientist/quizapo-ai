@@ -660,6 +660,14 @@ const App: React.FC = () => {
   const renderContent = () => {
     if (isLoading) return <LoadingSpinner />;
     if (view === 'emailVerification') return <EmailVerification email={verificationEmail} onLoginNavigate={() => setView('auth')} />;
+    if (view === 'authAction') return authActionParams ? (
+      <AuthActionHandler
+        mode={authActionParams.mode}
+        oobCode={authActionParams.oobCode}
+        onComplete={() => setView('auth')}
+      />
+    ) : <LoadingSpinner />;
+
     if (view === 'landing') return <LandingPage onGetStarted={() => setView('auth')} onNavigate={handleNavigate} />;
 
     // Explicit public pages for unauthenticated users
@@ -676,14 +684,7 @@ const App: React.FC = () => {
     if (!currentUser) return <AuthPortal onLogin={handleLogin} onRegister={handleRegister} onGoogleSignIn={handleGoogleSignIn} onForgotPassword={handleForgotPassword} onRegistrationSuccess={(e) => { setVerificationEmail(e); setView('emailVerification'); }} />;
 
     switch (view) {
-      case 'authAction':
-        return authActionParams ? (
-          <AuthActionHandler
-            mode={authActionParams.mode}
-            oobCode={authActionParams.oobCode}
-            onComplete={() => setView('auth')}
-          />
-        ) : <LoadingSpinner />;
+
       case 'career':
         return <CareerPage user={currentUser} onNavigate={handleNavigate} onUpdateGoal={handleUpdateCareerGoal} />;
       case 'dashboard':
@@ -806,7 +807,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans">
-      {['auth', 'emailVerification', 'test', 'studentLogin', 'landing', 'team'].includes(view) ? renderContent() : (
+      {['auth', 'emailVerification', 'test', 'studentLogin', 'landing', 'team', 'authAction'].includes(view) ? renderContent() : (
         <>
           <Header user={currentUser} activeView={view} onNavigate={handleNavigate} onLogout={handleLogout} notificationCount={notifications.filter(n => n.status === 'new').length} />
           <main className="container mx-auto p-4 md:p-8 animate-in fade-in duration-300">

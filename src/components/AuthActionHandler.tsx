@@ -18,8 +18,13 @@ export const AuthActionHandler: React.FC<AuthActionHandlerProps> = ({ mode, oobC
     const [newPassword, setNewPassword] = useState("");
     const [email, setEmail] = useState(""); // For password reset context
 
+    const hasRun = React.useRef(false);
+
     useEffect(() => {
-        handleAction();
+        if (!hasRun.current) {
+            hasRun.current = true;
+            handleAction();
+        }
     }, [mode, oobCode]);
 
     const handleAction = async () => {
