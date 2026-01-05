@@ -2,8 +2,13 @@
 // src/components/Dashboard.tsx
 
 import React, { useMemo } from 'react';
-import { AppUser, Test, GeneratedMcqSet, TestAttempt, View, QuestionBank } from '../types';
+import { AppUser, Test, GeneratedMcqSet, TestAttempt, View, QuestionBank, CortexMetrics, PersonalizedPlan, Difficulty } from '../types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
+import { analyzePerformance, generatePersonalizedPlan, generateAdaptiveQuiz } from '../services/cortexService';
+import { CortexProfile } from './CortexProfile';
+import { CareerMapper } from './CareerMapper';
+import { db } from '../services/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
 import {
   BarChart3,
   Users,
@@ -23,7 +28,8 @@ import {
   PlusCircle,
   Network,
   Siren,
-  PenTool
+  PenTool,
+  Briefcase
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn } from '../lib/utils';
@@ -163,6 +169,7 @@ interface DashboardProps {
   followingCount: number;
   onNavigate: (view: View) => void;
   questionBanks: QuestionBank[];
+  onStartTest: (test: Test) => void; // New Prop for Adaptive Review
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({
@@ -173,18 +180,96 @@ export const Dashboard: React.FC<DashboardProps> = ({
   followersCount,
   followingCount,
   onNavigate,
-  questionBanks
+  questionBanks,
+  onStartTest
 }) => {
   // Use generic role logic if needed, but display unified view
 
   // Calculate Stats
   const activeTests = publishedTests.filter(t => !t.endDate || new Date(t.endDate) > new Date()).length;
 
+  // --- Cortex AI Logic ---
+  const [cortexMetrics, setCortexMetrics] = React.useState<CortexMetrics | undefined>();
+  const [personalPlan, setPersonalPlan] = React.useState<PersonalizedPlan | undefined>();
+  const [isGeneratingReview, setIsGeneratingReview] = React.useState(false);
+
+  React.useEffect(() => {
+    // Determine which attempts to analyze. For Faculty, maybe imply they analyze their own progress or view? 
+    // Actually Dashboard is user-centric. If Faculty takes tests, they get analysis. 
+    // If Student, they get analysis.
+    if (testAttempts.length > 0) {
+      const m = analyzePerformance(testAttempts);
+      setCortexMetrics(m);
+      setPersonalPlan(generatePersonalizedPlan(m));
+    } else {
+      // Init empty state if strictly needed or handle in UI
+      const empty: CortexMetrics = { strongTopics: [], weakTopics: [], topicMap: {}, learningTrend: 'stable', recommendedDifficulty: Difficulty.Medium };
+      setCortexMetrics(empty);
+      setPersonalPlan(generatePersonalizedPlan(empty));
+    }
+  }, [testAttempts]);
+
+  const handleStartAdaptiveReview = async () => {
+    if (!cortexMetrics || !user) return;
+    setIsGeneratingReview(true);
+    try {
+      const mcqs = await generateAdaptiveQuiz(user.id, cortexMetrics);
+      const pseudoTest: Test = {
+        id: 'adaptive-' + Date.now(),
+        facultyId: 'ai-cortex',
+        title: `Adaptive Review: ${cortexMetrics.weakTopics[0] || 'General'}`,
+        durationMinutes: 15,
+        questions: mcqs,
+        studentFieldsMode: 'default', customStudentFields: [], endDate: null,
+        shuffleQuestions: true, attemptLimit: 1
+      };
+      onStartTest(pseudoTest);
+    } catch (e: any) {
+      alert("Failed to generate personalized review: " + e.message);
+    } finally {
+      setIsGeneratingReview(false);
+    }
+  };
+
+  // --- Career Persistence moved to App.tsx ---
+
   return (
     <div className="space-y-8 pb-12 animate-in fade-in duration-500 max-w-7xl mx-auto">
 
       {/* 1. Hero */}
       <DashboardHero user={user} publishedTests={publishedTests} onNavigate={onNavigate} />
+
+      {/* 1.5 Cortex AI Profile (Personalized Learning) */}
+      <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
+        <CortexProfile
+          metrics={cortexMetrics}
+          plan={personalPlan}
+          onStartReview={handleStartAdaptiveReview}
+          isLoading={isGeneratingReview}
+        />
+      </div>
+
+      {/* 1.6 Career Mapper (Phase 29) */}
+      <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
+        {/* --- Career Center Teaser --- */}
+        <section className="bg-gradient-to-r from-indigo-600 to-violet-600 rounded-2xl p-6 text-white shadow-lg flex flex-col md:flex-row items-center justify-between gap-6">
+          <div>
+            <h2 className="text-2xl font-bold flex items-center gap-2 mb-2">
+              <Briefcase className="w-6 h-6" /> Career Center
+            </h2>
+            <p className="text-indigo-100 max-w-xl">
+              Map your skills to <strong>15+ industry roles</strong>, discover salary insights, and get a personalized learning roadmap.
+            </p>
+          </div>
+          <Button
+            onClick={() => onNavigate('career')}
+            variant="secondary"
+            className="bg-white text-indigo-600 hover:bg-slate-100 font-bold px-6"
+          >
+            Open Career Mapper <ArrowRight className="w-4 h-4 ml-2" />
+          </Button>
+        </section>
+      </div>
 
       {/* 2. Key Metrics Strip */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -315,6 +400,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
       </div>
 
-    </div>
+    </div >
   );
 };

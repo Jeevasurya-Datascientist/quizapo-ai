@@ -38,6 +38,8 @@ export type View =
   | 'idVerification'
   // Main Views
   | 'dashboard'
+  | 'career' // Dedicated Career Page
+  | 'authAction' // Handling Firebase Actions (Verify Email, Reset Pwd)
   | 'content'
   | 'network'
   | 'integrity'
@@ -92,6 +94,8 @@ export interface AppUser {
   followersCount: number;
   followingCount: number;
   avatarUrl?: string; // DiceBear URL
+  cortexMetrics?: CortexMetrics;
+  careerGoal?: CareerGoal;
 }
 
 export interface SocialConnection {
@@ -249,4 +253,61 @@ export interface ViolationAlert {
   testTitle: string;
   timestamp: string;
   status: 'pending' | 'resolved';
+}
+
+// --- Cortex 2.0 Interfaces ---
+
+export interface TopicPerformance {
+  topic: string;
+  score: number; // 0-100
+  attempts: number;
+  lastAttemptDate: string;
+}
+
+export interface CortexMetrics {
+  strongTopics: string[]; // Score > 80%
+  weakTopics: string[];   // Score < 60%
+  topicMap: Record<string, TopicPerformance>;
+  learningTrend: 'improving' | 'declining' | 'stable';
+  recommendedDifficulty: Difficulty;
+}
+
+export interface PersonalizedPlan {
+  focusTopics: string[];
+  suggestedAction: 'review_basics' | 'practice_hard' | 'attempt_new_topic';
+  reasoning: string;
+}
+
+// --- Career Mapping Interfaces ---
+
+export interface Skill {
+  name: string;
+  proficiency: number; // 0-100
+  category: 'technical' | 'soft' | 'domain';
+}
+
+export interface CareerRole {
+  id: string;
+  title: string;
+  description: string;
+  requiredSkills: { name: string; level: number }[]; // Level 0-100
+  averageSalary: string;
+  demandLevel: 'high' | 'medium' | 'low';
+  category?: string; // e.g. "Engineering", "Design"
+  learningPath?: string[]; // Steps/Resources
+}
+
+export interface CareerPath {
+  roleId: string;
+  roleTitle: string;
+  matchScore: number; // 0-100
+  missingSkills: { name: string; gap: number }[];
+  learningResources: string[];
+}
+
+export interface CareerGoal {
+  targetRoleId: string; // e.g., 'frontend-dev'
+  targetRoleTitle: string;
+  deadline?: string;
+  customNotes?: string;
 }

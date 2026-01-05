@@ -46,6 +46,7 @@ import { Notifications } from './components/Notifications';
 import { TestAnalytics } from './components/TestAnalytics';
 import { ProfilePage } from './components/ProfilePage';
 import { EmailVerification } from './components/EmailVerification';
+import { AuthActionHandler } from './components/AuthActionHandler';
 import { SendNotificationModal } from './components/SendNotificationModal';
 import { Certificate } from './components/Certificate';
 import { LandingPage } from './components/LandingPage';
@@ -61,6 +62,7 @@ import { EditBankPage } from './components/EditBankPage';
 import { MyBanksPage } from './components/MyBanksPage';
 import { AboutPage, ContactPage, PrivacyPage, TermsPage } from './components/PublicPages';
 import { TeamPage } from './components/TeamPage';
+import { CareerPage } from './components/CareerPage';
 
 // --- Types & Services ---
 import { Role, View } from './types';
@@ -159,6 +161,9 @@ const App: React.FC = () => {
   const [isMsgModalOpen, setIsMsgModalOpen] = useState(false);
   const [msgTargetUser, setMsgTargetUser] = useState('');
 
+  // State for Auth Actions
+  const [authActionParams, setAuthActionParams] = useState<{ mode: string, oobCode: string } | null>(null);
+
   // --- Persistence Effects ---
   useEffect(() => { try { localStorage.setItem('userMetadata', JSON.stringify(userMetadata)); } catch (e) { } }, [userMetadata]);
   useEffect(() => { try { localStorage.setItem('userMetadata', JSON.stringify(userMetadata)); } catch (e) { } }, [userMetadata]);
@@ -207,9 +212,21 @@ const App: React.FC = () => {
         if (isLoading) {
           const params = new URLSearchParams(window.location.search);
           const testId = params.get('testId');
+          const mode = params.get('mode');
+          const oobCode = params.get('oobCode');
+
+          // Handle Firebase Auth Actions (Reset Password, Verify Email)
+          if (mode && oobCode) {
+            setAuthActionParams({ mode, oobCode });
+            setView('authAction');
+            setIsLoading(false);
+            return;
+          }
+
           // if (testId && !activeTest) { ... }
 
-          if (['auth', 'idVerification', 'emailVerification'].includes(view)) {
+          // Redirect if on auth/landing pages but already logged in
+          if (['auth', 'landing', 'idVerification', 'emailVerification'].includes(view)) {
             setView('dashboard');
           }
           setIsLoading(false);
@@ -516,7 +533,7 @@ const App: React.FC = () => {
     setTestHistory(p => [attempt, ...p]);
     setUserAttempts(p => [attempt, ...p]);
 
-    if (violations >= 3) {
+    if (violations >= 3 && !activeTest.id.startsWith('adaptive-')) {
       await updateDoc(doc(db, "tests", activeTest.id), { disqualifiedStudents: arrayUnion(currentUser.id) });
       await setDoc(doc(collection(db, "violationAlerts")), { id: doc(collection(db, "violationAlerts")).id, studentId: currentUser.id, studentEmail: currentUser.email, facultyId: activeTest.facultyId, testId: activeTest.id, testTitle: activeTest.title, timestamp: new Date().toISOString(), status: 'pending' });
     }
@@ -640,7 +657,18 @@ const App: React.FC = () => {
     if (!currentUser) return <AuthPortal onLogin={handleLogin} onRegister={handleRegister} onGoogleSignIn={handleGoogleSignIn} onForgotPassword={handleForgotPassword} onRegistrationSuccess={(e) => { setVerificationEmail(e); setView('emailVerification'); }} />;
 
     switch (view) {
+      case 'authAction':
+        return authActionParams ? (
+          <AuthActionHandler
+            mode={authActionParams.mode}
+            oobCode={authActionParams.oobCode}
+            onComplete={() => setView('auth')}
+          />
+        ) : <LoadingSpinner />;
+      case 'career':
+        return <CareerPage user={currentUser} onNavigate={handleNavigate} onUpdateGoal={handleUpdateCareerGoal} />;
       case 'dashboard':
+      case 'auth': // Fallback if logged in
       case 'studentPortal': case 'facultyPortal':
         return <Dashboard
           user={currentUser}
@@ -651,6 +679,7 @@ const App: React.FC = () => {
           followersCount={currentUser.followers?.length || 0}
           followingCount={currentUser.following.length}
           onNavigate={handleNavigate}
+          onStartTest={handleStartTest}
         />;
 
       case 'network':
