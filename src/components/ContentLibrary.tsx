@@ -16,110 +16,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-// --- SUB-COMPONENT: PublishModal ---
-interface PublishModalProps {
-  questionCount: number;
-  onSubmit: (title: string, duration: number, endDate: string | null, studentFieldsMode: 'default' | 'custom', customFields: CustomFormField[], shuffleQuestions: boolean, shuffleOptions: boolean, attemptLimit: number, allowSkip: boolean) => void;
-  onClose: () => void;
-}
-
-const PublishModal: React.FC<PublishModalProps> = ({ questionCount, onSubmit, onClose }) => {
-  const [title, setTitle] = useState('');
-  const [duration, setDuration] = useState(30);
-  const [endDate, setEndDate] = useState('');
-  const [studentFieldsMode, setStudentFieldsMode] = useState<'default' | 'custom'>('default');
-  const [customFields, setCustomFields] = useState<CustomFormField[]>([{ label: '' }]);
-  const [shuffleQuestions, setShuffleQuestions] = useState(false);
-  const [shuffleOptions, setShuffleOptions] = useState(false);
-  const [allowSkip, setAllowSkip] = useState(false);
-  const [attemptLimit, setAttemptLimit] = useState(1);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim()) { setError("Test Title is required."); return; }
-    if (duration <= 0) { setError("Duration must be positive."); return; }
-
-    if (endDate && new Date(endDate) <= new Date()) {
-      setError("Deadline must be in the future.");
-      return;
-    }
-
-    const finalFields = studentFieldsMode === 'custom' ? customFields.filter(f => f.label.trim() !== '') : [];
-    onSubmit(title, duration, endDate || null, studentFieldsMode, finalFields, shuffleQuestions, shuffleOptions, attemptLimit, allowSkip);
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200 overflow-y-auto">
-      <Card className="w-full max-w-lg shadow-2xl border-primary/20 my-auto">
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <div>
-            <CardTitle>Launch Test</CardTitle>
-            <CardDescription>Configure settings for {questionCount} questions</CardDescription>
-          </div>
-          <Button variant="ghost" size="icon" onClick={onClose}><X className="w-4 h-4" /></Button>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Test Title</label>
-              <Input placeholder="e.g. Final Exam - Module 1" value={title} onChange={e => setTitle(e.target.value)} autoFocus />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Duration (Minutes)</label>
-                <Input type="number" min="1" value={duration} onChange={e => setDuration(parseInt(e.target.value) || 0)} />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Attempt Limit (0 = Unlimited)</label>
-                <Input type="number" min="0" value={attemptLimit} onChange={e => setAttemptLimit(parseInt(e.target.value) || 0)} />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Auto-Revoke Deadline</label>
-              <Input type="datetime-local" value={endDate} onChange={e => setEndDate(e.target.value)} />
-              <p className="text-[10px] text-muted-foreground">Test closes automatically after this time.</p>
-            </div>
-
-            <div className="flex flex-col gap-2 p-3 bg-muted/30 rounded-lg">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-                  <input type="checkbox" checked={shuffleQuestions} onChange={e => setShuffleQuestions(e.target.checked)} className="rounded border-gray-300 text-primary focus:ring-primary" />
-                  Shuffle Questions
-                </label>
-                <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-                  <input type="checkbox" checked={shuffleOptions} onChange={e => setShuffleOptions(e.target.checked)} className="rounded border-gray-300 text-primary focus:ring-primary" />
-                  Shuffle Options
-                </label>
-              </div>
-              <div className="flex gap-4">
-                <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-                  <input type="checkbox" checked={allowSkip} onChange={e => setAllowSkip(e.target.checked)} className="rounded border-gray-300 text-primary focus:ring-primary" />
-                  Allow Skipping Questions
-                </label>
-              </div>
-            </div>
-
-            {error && (
-              <div className="bg-destructive/10 text-destructive text-sm p-2 rounded-md flex items-center gap-2">
-                <AlertCircle className="w-4 h-4" /> {error}
-              </div>
-            )}
-
-            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={onClose} className="w-full sm:w-auto">Cancel</Button>
-              <Button type="submit" className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto">
-                <Rocket className="w-4 h-4 mr-2" /> Launch Now
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
-  );
-};
+// --- SUB-COMPONENT: PublishTestModal ---
+import { PublishTestModal } from './PublishTestModal';
 
 // --- SUB-COMPONENT: BankItem (Draft) ---
 const BankDisplayCard: React.FC<{
@@ -160,7 +58,8 @@ const BankDisplayCard: React.FC<{
       </CardContent>
 
       {showModal && (
-        <PublishModal
+        <PublishTestModal
+          initialTitle={bank.title}
           questionCount={bank.questions.length}
           onClose={() => setShowModal(false)}
           onSubmit={(...args) => {

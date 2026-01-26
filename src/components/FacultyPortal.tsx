@@ -8,103 +8,17 @@ import { ViolationManager } from './ViolationManager';
 import { McqDisplay } from './McqDisplay';
 
 // --- Sub-component: PublishModal ---
-interface PublishModalProps {
-  questionCount: number;
-  onSubmit: (title: string, duration: number, endDate: string | null, studentFieldsMode: 'default' | 'custom', customFields: CustomFormField[]) => void;
-  onClose: () => void;
-}
-const PublishModal: React.FC<PublishModalProps> = ({ questionCount, onSubmit, onClose }) => {
-  const [title, setTitle] = useState('');
-  const [duration, setDuration] = useState(10);
-  const [endDate, setEndDate] = useState('');
-  const [studentFieldsMode, setStudentFieldsMode] = useState<'default' | 'custom'>('default');
-  const [customFields, setCustomFields] = useState<CustomFormField[]>([{ label: '' }]);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleAddField = () => setCustomFields(prev => [...prev, { label: '' }]);
-  const handleRemoveField = (index: number) => setCustomFields(prev => prev.filter((_, i) => i !== index));
-  const handleFieldChange = (index: number, value: string) => {
-    const newFields = [...customFields];
-    newFields[index].label = value;
-    setCustomFields(newFields);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    if (!title.trim()) { setError("Test Title is required."); return; }
-    if (duration <= 0) { setError("Duration must be a positive number."); return; }
-    if (endDate && new Date(endDate) <= new Date()) { setError("End Date must be in the future."); return; }
-    const finalCustomFields = studentFieldsMode === 'custom' ? customFields.filter(f => f.label.trim() !== '') : [];
-    if (studentFieldsMode === 'custom' && finalCustomFields.length === 0) {
-      setError("Please add at least one custom field or switch to Default mode.");
-      return;
-    }
-    onSubmit(title.trim(), duration, endDate || null, studentFieldsMode, finalCustomFields);
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <h3 className="text-xl font-bold mb-4">Publish Test Settings</h3>
-        <p className="mb-4 text-sm text-gray-600 dark:text-gray-300">Configure the details for this test ({questionCount} questions).</p>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="testTitle" className="block text-sm font-medium">Test Title</label>
-            <input type="text" id="testTitle" value={title} onChange={e => setTitle(e.target.value)} required className="mt-1 w-full p-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md" />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="duration" className="block text-sm font-medium">Duration (minutes)</label>
-              <input type="number" id="duration" value={duration} onChange={e => setDuration(parseInt(e.target.value, 10))} min="1" required className="mt-1 w-full p-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md" />
-            </div>
-            <div>
-              <label htmlFor="endDate" className="block text-sm font-medium">End Date (Optional)</label>
-              <input type="datetime-local" id="endDate" value={endDate} onChange={e => setEndDate(e.target.value)} className="mt-1 w-full p-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md" />
-            </div>
-          </div>
-          <div className="pt-2">
-            <label className="block text-sm font-medium mb-2">Student Details Form</label>
-            <div className="flex gap-4 p-2 bg-gray-100 dark:bg-gray-700/50 rounded-md">
-              <label className="flex items-center cursor-pointer">
-                <input type="radio" name="fieldsMode" value="default" checked={studentFieldsMode === 'default'} onChange={() => setStudentFieldsMode('default')} className="h-4 w-4" />
-                <span className="ml-2">Default (Name, Reg No, Branch, Section)</span>
-              </label>
-              <label className="flex items-center cursor-pointer">
-                <input type="radio" name="fieldsMode" value="custom" checked={studentFieldsMode === 'custom'} onChange={() => setStudentFieldsMode('custom')} className="h-4 w-4" />
-                <span className="ml-2">Custom</span>
-              </label>
-            </div>
-          </div>
-          {studentFieldsMode === 'custom' && (
-            <div className="p-4 border border-dashed border-gray-300 dark:border-gray-600 rounded-md space-y-3">
-              <h4 className="font-semibold">Custom Student Fields</h4>
-              {customFields.map((field, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <input type="text" placeholder="e.g., Department Name" value={field.label} onChange={(e) => handleFieldChange(index, e.target.value)} className="flex-grow p-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md" />
-                  <button type="button" onClick={() => handleRemoveField(index)} className="text-red-500 hover:text-red-700 font-bold text-xl">&times;</button>
-                </div>
-              ))}
-              <button type="button" onClick={handleAddField} className="text-sm text-blue-600 hover:underline">+ Add Another Field</button>
-            </div>
-          )}
-          {error && <p className="text-sm text-red-500 bg-red-100 dark:bg-red-900/50 p-2 rounded-md">{error}</p>}
-          <div className="mt-6 flex justify-end space-x-3">
-            <button type="button" onClick={onClose} className="py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium">Cancel</button>
-            <button type="submit" className="py-2 px-4 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">Publish Test</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
+// --- Sub-component: PublishTestModal ---
+import { PublishTestModal } from './PublishTestModal';
 
 // --- Sub-component: GeneratedSet ---
-const GeneratedSet: React.FC<{ set: GeneratedMcqSet; onPublish: (id: string, title: string, duration: number, endDate: string | null, studentFieldsMode: 'default' | 'custom', customFields: CustomFormField[]) => void; }> = ({ set, onPublish }) => {
+const GeneratedSet: React.FC<{ set: GeneratedMcqSet; onPublish: (id: string, title: string, duration: number, endDate: string | null, studentFieldsMode: 'default' | 'custom', customFields: CustomFormField[], shuffleQ: boolean, shuffleO: boolean, limit: number, allowSkip: boolean) => void; }> = ({ set, onPublish }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const handlePublish = (title: string, duration: number, endDate: string | null, studentFieldsMode: 'default' | 'custom', customFields: CustomFormField[]) => {
-    onPublish(set.id, title, duration, endDate, studentFieldsMode, customFields);
+  const handlePublish = (title: string, duration: number, endDate: string | null, studentFieldsMode: 'default' | 'custom', customFields: CustomFormField[],
+    shuffleQ: boolean, shuffleO: boolean, limit: number, allowSkip: boolean
+  ) => {
+    onPublish(set.id, title, duration, endDate, studentFieldsMode, customFields, shuffleQ, shuffleO, limit, allowSkip);
     setShowModal(false);
   };
   return (
@@ -124,7 +38,7 @@ const GeneratedSet: React.FC<{ set: GeneratedMcqSet; onPublish: (id: string, tit
           {set.mcqs.map((mcq, index) => <McqDisplay key={index} mcq={mcq} index={index} />)}
         </div>
       )}
-      {showModal && <PublishModal questionCount={set.mcqs.length} onSubmit={handlePublish} onClose={() => setShowModal(false)} />}
+      {showModal && <PublishTestModal questionCount={set.mcqs.length} onSubmit={handlePublish} onClose={() => setShowModal(false)} />}
     </div>
   );
 };
@@ -138,7 +52,9 @@ interface FacultyPortalProps {
   connectionRequests: ConnectionRequest[];
   ignoredNotifications: AppNotification[];
   violationAlerts: ViolationAlertType[]; // <-- FIX: Use the aliased type here
-  onPublishTest: (mcqSetId: string, title: string, durationMinutes: number, endDate: string | null, studentFieldsMode: 'default' | 'custom', customFormFields: CustomFormField[]) => void;
+  onPublishTest: (mcqSetId: string, title: string, durationMinutes: number, endDate: string | null, studentFieldsMode: 'default' | 'custom', customFormFields: CustomFormField[],
+    shuffleQuestions: boolean, shuffleOptions: boolean, attemptLimit: number, allowSkip: boolean
+  ) => void;
   onRevokeTest: (testId: string) => void;
   onFollowRequestResponse: (requestId: string, status: 'accepted' | 'rejected') => void;
   onViewTestAnalytics: (test: Test) => void;

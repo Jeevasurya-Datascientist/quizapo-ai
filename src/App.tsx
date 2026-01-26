@@ -60,6 +60,8 @@ import { NetworkCenter } from './components/NetworkCenter';
 import { IntegrityCenter } from './components/IntegrityCenter';
 import { EditBankPage } from './components/EditBankPage';
 import { MyBanksPage } from './components/MyBanksPage';
+import { PublishTestModal } from './components/PublishTestModal';
+import { ShareTestModal } from './components/ShareTestModal';
 import { AboutPage, ContactPage, PrivacyPage, TermsPage } from './components/PublicPages';
 import { TeamPage } from './components/TeamPage';
 import { CareerPage } from './components/CareerPage';
@@ -123,6 +125,12 @@ const App: React.FC = () => {
       setView('authAction');
       setIsLoading(false);
     }
+
+    // NEW: Capture testId for deep linking even if unauthenticated
+    const testId = params.get('testId');
+    if (testId) {
+      sessionStorage.setItem('pendingTestId', testId);
+    }
   }, []);
 
   // --- 2. Data State (Persisted/Cached) ---
@@ -169,6 +177,8 @@ const App: React.FC = () => {
   const [analyticsTest, setAnalyticsTest] = useState<Test | null>(null);
   const [selectedCertificate, setSelectedCertificate] = useState<TestAttempt | null>(null);
   const [activeBankId, setActiveBankId] = useState<string | null>(null);
+  const [publishBank, setPublishBank] = useState<QuestionBank | null>(null);
+  const [publishedTestModalData, setPublishedTestModalData] = useState<{ id: string, title: string } | null>(null); // NEW: For Share Modal
 
   // --- 5. Modal State ---
   const [isMsgModalOpen, setIsMsgModalOpen] = useState(false);
@@ -222,15 +232,35 @@ const App: React.FC = () => {
         setUserMetadata(prev => [...prev.filter(u => u.id !== userData.id), userData]);
 
         // Smart Navigation / Deep Linking on Initial Load
-        if (isLoading) {
-          const params = new URLSearchParams(window.location.search);
-          const testId = params.get('testId');
-          const mode = params.get('mode');
-          // Handle Firebase Auth Actions handled by top-level useEffect now
-          // if (mode && oobCode) { ... }
+        const pendingTestId = sessionStorage.getItem('pendingTestId') || new URLSearchParams(window.location.search).get('testId');
 
-          // if (testId && !activeTest) { ... }
+        if (pendingTestId) {
+          // Verify and Redirect
+          getDoc(doc(db, "tests", pendingTestId)).then(testSnap => {
+            if (testSnap.exists()) {
+              const testData = testSnap.data() as Test;
 
+              // Real-time Expiry Check
+              if (testData.endDate && new Date(testData.endDate) < new Date()) {
+                alert("This test has ended and the link is no longer valid.");
+                if (isLoading) setView('landing');
+                sessionStorage.removeItem('pendingTestId');
+              } else {
+                // Valid Test
+                setActiveTest(testData);
+                // Pre-fill student info if needed or just let StudentLogin handle it
+                setStudentInfo({ name: userData.name, registrationNumber: userData.username, branch: "N/A", section: "N/A", customData: {} });
+                setView('studentLogin');
+                sessionStorage.removeItem('pendingTestId'); // Consume it
+              }
+              sessionStorage.removeItem('pendingTestId'); // Consume it
+            } else {
+              if (isLoading) setView('dashboard');
+            }
+            setIsLoading(false);
+          });
+        }
+        else if (isLoading) {
           // Redirect if on auth/landing pages but already logged in
           if (['auth', 'landing', 'idVerification', 'emailVerification'].includes(view)) {
             setView('dashboard');
@@ -286,6 +316,22 @@ const App: React.FC = () => {
 
     return () => unsubscribes.forEach(u => u());
   }, [currentUser]);
+
+  // --- Auto-Revoke Logic (Faculty Side) ---
+  useEffect(() => {
+    if (!currentUser || publishedTests.length === 0) return;
+
+    publishedTests.forEach(test => {
+      if (test.endDate && new Date(test.endDate) < new Date()) {
+        console.log(`Auto-revoking expired test: ${test.title} (${test.id})`);
+        // We use the raw delete function to avoid confirmation dialogs
+        deleteDoc(doc(db, "tests", test.id)).catch(console.error);
+        // Also cleanup notifications
+        getDocs(query(collection(db, "notifications"), where("test.id", "==", test.id)))
+          .then(snap => snap.docs.forEach(d => deleteDoc(d.ref)));
+      }
+    });
+  }, [publishedTests, currentUser]);
 
   // --- Derived State ---
   // const userGeneratedSets = useMemo(() => allGeneratedMcqs.filter(s => s.facultyId === currentUser?.id), [allGeneratedMcqs, currentUser]);
@@ -424,15 +470,8 @@ const App: React.FC = () => {
   }, [currentUser]);
 
   const handleCreateTestFromBank = (bank: QuestionBank) => {
-    // Logic to jump to test publisher with pre-filled questions
-    // For now, we can create a temporary set logic or just direct publish
-    // This part might need further refinement based on "Publish Test" flow, 
-    // but for now let's just create a set wrapper and invoke publish flow (or similar).
-
-    // Simulating a set for now to reuse publish logic or we create a new publish flow.
-    // Ideally "ContentLibrary" handles this. 
-    // Let's just navigate to content library for now or implement direct publish modal later.
-    alert("Feature coming in next step: Publish directly from Bank!");
+    // Open the publish modal for this bank
+    setPublishBank(bank);
   };
 
   const handlePublishTest = async (id: string, title: string, duration: number, end: string | null, mode: any, fields: any, shuffleQ: boolean, shuffleO: boolean, limit: number, allowSkip: boolean) => {
@@ -455,7 +494,8 @@ const App: React.FC = () => {
       });
     }
     await batch.commit();
-    setView('dashboard');
+    setPublishBank(null); // Close modal if open
+    setPublishedTestModalData({ id: newTest.id, title: newTest.title }); // Open Share Modal
   };
 
   const handleRevokeTest = async (testId: string) => {
@@ -524,7 +564,14 @@ const App: React.FC = () => {
   // --- Handlers: Execution ---
   const handleStartTest = async (test: Test, notificationId?: string) => {
     if (!currentUser) { alert("Must be logged in."); return; }
-    if (test.endDate && new Date(test.endDate) < new Date()) { alert("Expired"); return; }
+
+    // Strict Expiry Check
+    if (test.endDate && new Date(test.endDate) < new Date()) {
+      alert("This test link is no longer valid (Expired).");
+      // Optionally trigger cleanup here too if it exists but is expired
+      return;
+    }
+
     if (test.disqualifiedStudents?.includes(currentUser.id)) { alert("Disqualified"); return; }
 
     if (test.attemptLimit && test.attemptLimit > 0) {
@@ -807,6 +854,25 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans">
+      {publishBank && (
+        <PublishTestModal
+          initialTitle={publishBank.title}
+          questionCount={publishBank.questions.length}
+          onClose={() => setPublishBank(null)}
+          onSubmit={(title, duration, end, mode, fields, shuffleQ, shuffleO, limit, allowSkip) => {
+            handlePublishTest(publishBank.id, title, duration, end, mode, fields, shuffleQ, shuffleO, limit, allowSkip);
+          }}
+        />
+      )}
+
+      {publishedTestModalData && (
+        <ShareTestModal
+          testId={publishedTestModalData.id}
+          testName={publishedTestModalData.title}
+          onClose={() => setPublishedTestModalData(null)}
+        />
+      )}
+
       {['auth', 'emailVerification', 'test', 'studentLogin', 'landing', 'team', 'authAction'].includes(view) ? renderContent() : (
         <>
           <Header user={currentUser} activeView={view} onNavigate={handleNavigate} onLogout={handleLogout} notificationCount={notifications.filter(n => n.status === 'new').length} />

@@ -199,7 +199,7 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({
     }
 
     if (currentStep === 3) {
-      if (!formData.collegeName) return "College name is required.";
+      if (!formData.collegeName) return "Institution name is required.";
       if (!formData.country || !formData.state || !formData.district) return "Please complete location details.";
     }
     return null;
@@ -216,6 +216,12 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!isLogin && !isForgotPass && step < 3) {
+      handleNext();
+      return;
+    }
+
     const err = validateStep(isLogin ? 0 : step);
     if (err) {
       setError(err);
@@ -477,10 +483,24 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({
                 </div>
                 <div className="space-y-2">
                   <Label>District</Label>
-                  <Select value={formData.district} onValueChange={(v) => handleInputChange('district', v)} disabled={!formData.state}>
-                    <SelectTrigger className="h-10 bg-gray-50 dark:bg-zinc-800/50"><SelectValue placeholder="Select District" /></SelectTrigger>
-                    <SelectContent>{(districts[formData.state] || []).map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
-                  </Select>
+                  {(districts[formData.state] || []).length > 0 ? (
+                    <Select value={formData.district} onValueChange={(v) => handleInputChange('district', v)} disabled={!formData.state}>
+                      <SelectTrigger className="h-10 bg-gray-50 dark:bg-zinc-800/50"><SelectValue placeholder="Select District" /></SelectTrigger>
+                      <SelectContent>
+                        {(districts[formData.state] || []).map(d => (
+                          <SelectItem key={d} value={d}>{d}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Input
+                      value={formData.district}
+                      onChange={(e) => handleInputChange('district', e.target.value)}
+                      placeholder="Enter District"
+                      disabled={!formData.state}
+                      className="h-10 bg-gray-50 dark:bg-zinc-800/50"
+                    />
+                  )}
                 </div>
               </div>
             )}

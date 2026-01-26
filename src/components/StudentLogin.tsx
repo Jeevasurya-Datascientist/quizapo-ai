@@ -3,6 +3,7 @@ import type { Test, Student, AppUser } from '../types';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
+import { Textarea } from './ui/textarea'; // Assuming you have this or standard textarea
 import { Label } from './ui/label';
 import { User, Fingerprint, Building2, Users, ArrowRight, Lock, CheckCircle2 } from 'lucide-react';
 
@@ -16,10 +17,10 @@ export const StudentLogin: React.FC<StudentLoginProps> = ({ test, currentUser, o
   // --- STATE INITIALIZATION ---
   // If currentUser exists, pre-fill data
   const [name, setName] = useState(currentUser?.name || '');
-  const [username, setUsername] = useState(currentUser?.username || ''); 
-  const [department, setDepartment] = useState(''); 
-  const [group, setGroup] = useState(''); 
-  
+  const [username, setUsername] = useState(currentUser?.username || '');
+  const [department, setDepartment] = useState('');
+  const [group, setGroup] = useState('');
+
   // Custom Fields State
   const [customData, setCustomData] = useState<{ [key: string]: string }>({});
   const [error, setError] = useState<string | null>(null);
@@ -39,14 +40,14 @@ export const StudentLogin: React.FC<StudentLoginProps> = ({ test, currentUser, o
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    
+
     // 1. Validate Default Mode
     if (test.studentFieldsMode === 'default') {
       if (!name.trim() || !username.trim()) {
         setError("Name and Username are required.");
         return;
       }
-    } 
+    }
     // 2. Validate Custom Mode
     else {
       for (const field of test.customStudentFields) {
@@ -56,14 +57,14 @@ export const StudentLogin: React.FC<StudentLoginProps> = ({ test, currentUser, o
         }
       }
     }
-    
+
     // 3. Construct Data Object
-    const loginData: Student = { 
-      name: name.trim() || customData['Name'] || "Candidate", 
-      registrationNumber: username.trim() || customData['ID'] || "Unknown", 
-      branch: department.trim() || "N/A", 
-      section: group.trim() || "N/A", 
-      customData 
+    const loginData: Student = {
+      name: name.trim() || customData['Name'] || "Candidate",
+      registrationNumber: username.trim() || customData['ID'] || "Unknown",
+      branch: department.trim() || "N/A",
+      section: group.trim() || "N/A",
+      customData
     };
 
     onLogin(loginData);
@@ -77,10 +78,10 @@ export const StudentLogin: React.FC<StudentLoginProps> = ({ test, currentUser, o
         <CardHeader className="text-center space-y-2">
           <div className="mx-auto bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mb-2 ring-4 ring-white dark:ring-gray-800">
             {currentUser ? (
-               // Show Avatar/Initials if logged in
-               <span className="text-xl font-bold text-primary">{currentUser.name.charAt(0)}</span>
+              // Show Avatar/Initials if logged in
+              <span className="text-xl font-bold text-primary">{currentUser.name.charAt(0)}</span>
             ) : (
-               <User className="w-8 h-8 text-primary" />
+              <User className="w-8 h-8 text-primary" />
             )}
           </div>
           <CardTitle className="text-2xl">Candidate Registration</CardTitle>
@@ -97,10 +98,10 @@ export const StudentLogin: React.FC<StudentLoginProps> = ({ test, currentUser, o
             </span>
           </CardDescription>
         </CardHeader>
-        
+
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-5">
-            
+
             {/* --- DEFAULT FIELDS MODE --- */}
             {test.studentFieldsMode === 'default' && (
               <>
@@ -108,13 +109,13 @@ export const StudentLogin: React.FC<StudentLoginProps> = ({ test, currentUser, o
                   <Label>Full Name</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      placeholder="e.g. John Doe" 
-                      value={name} 
-                      onChange={e => setName(e.target.value)} 
+                    <Input
+                      placeholder="e.g. John Doe"
+                      value={name}
+                      onChange={e => setName(e.target.value)}
                       className={`pl-9 ${isAutoFilled ? 'bg-muted/50' : ''}`}
-                      // We usually allow name editing even if logged in, but you can lock it:
-                      // readOnly={isAutoFilled} 
+                    // We usually allow name editing even if logged in, but you can lock it:
+                    // readOnly={isAutoFilled} 
                     />
                   </div>
                 </div>
@@ -127,10 +128,10 @@ export const StudentLogin: React.FC<StudentLoginProps> = ({ test, currentUser, o
                     ) : (
                       <Fingerprint className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                     )}
-                    <Input 
-                      placeholder="e.g. user_123 or Roll No" 
-                      value={username} 
-                      onChange={e => setUsername(e.target.value)} 
+                    <Input
+                      placeholder="e.g. user_123 or Roll No"
+                      value={username}
+                      onChange={e => setUsername(e.target.value)}
                       className={`pl-9 font-mono ${isAutoFilled ? 'bg-amber-50 dark:bg-amber-900/10 border-amber-200 text-amber-900 dark:text-amber-100 cursor-not-allowed' : ''}`}
                       readOnly={isAutoFilled} // LOCK THE USERNAME IF LOGGED IN
                     />
@@ -146,10 +147,10 @@ export const StudentLogin: React.FC<StudentLoginProps> = ({ test, currentUser, o
                     <Label>Department / Branch</Label>
                     <div className="relative">
                       <Building2 className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input 
-                        placeholder="Optional" 
-                        value={department} 
-                        onChange={e => setDepartment(e.target.value)} 
+                      <Input
+                        placeholder="Optional"
+                        value={department}
+                        onChange={e => setDepartment(e.target.value)}
                         className="pl-9"
                       />
                     </div>
@@ -158,10 +159,10 @@ export const StudentLogin: React.FC<StudentLoginProps> = ({ test, currentUser, o
                     <Label>Group / Section</Label>
                     <div className="relative">
                       <Users className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input 
-                        placeholder="Optional" 
-                        value={group} 
-                        onChange={e => setGroup(e.target.value)} 
+                      <Input
+                        placeholder="Optional"
+                        value={group}
+                        onChange={e => setGroup(e.target.value)}
                         className="pl-9"
                       />
                     </div>
@@ -176,12 +177,23 @@ export const StudentLogin: React.FC<StudentLoginProps> = ({ test, currentUser, o
                 {test.customStudentFields.map((field, idx) => (
                   <div key={idx} className="space-y-2">
                     <Label>{field.label}</Label>
-                    <Input 
-                      required={field.required !== false}
-                      placeholder={`Enter ${field.label}`}
-                      value={customData[field.label] || ''} 
-                      onChange={e => handleCustomDataChange(field.label, e.target.value)} 
-                    />
+                    {field.type === 'address' ? (
+                      <textarea
+                        required={field.required !== false}
+                        placeholder={`Enter ${field.label}`}
+                        value={customData[field.label] || ''}
+                        onChange={e => handleCustomDataChange(field.label, e.target.value)}
+                        className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 min-h-[80px]"
+                      />
+                    ) : (
+                      <Input
+                        type={field.type === 'number' ? 'number' : 'text'}
+                        required={field.required !== false}
+                        placeholder={`Enter ${field.label}`}
+                        value={customData[field.label] || ''}
+                        onChange={e => handleCustomDataChange(field.label, e.target.value)}
+                      />
+                    )}
                   </div>
                 ))}
               </div>
@@ -198,7 +210,7 @@ export const StudentLogin: React.FC<StudentLoginProps> = ({ test, currentUser, o
             <Button type="submit" size="lg" className="w-full text-base py-6 shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform">
               {isAutoFilled ? 'Confirm & Start Test' : 'Register & Start Test'} <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
-            
+
             <p className="text-xs text-center text-muted-foreground mt-4">
               By continuing, you agree to the test integrity rules.
             </p>

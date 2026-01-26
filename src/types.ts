@@ -160,6 +160,7 @@ export interface FormState {
 
 export interface CustomFormField {
   label: string;
+  type: 'text' | 'number' | 'address';
   required?: boolean;
 }
 

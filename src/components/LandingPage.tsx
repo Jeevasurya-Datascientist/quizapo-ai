@@ -1,5 +1,7 @@
 import React from 'react';
 import { ArrowRight, Brain, Shield, BarChart3, Users, Play, Code, ChevronRight, Globe, Lock } from 'lucide-react';
+import { motion } from 'framer-motion';
+
 import { Button } from './ui/button';
 import { cn } from '../lib/utils';
 import { View } from '../types';
@@ -84,6 +86,57 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onGetStart
                         </Button>
                     </div>
                 </div>
+
+                {/* Premium Mobile-First 3D Video Demo */}
+                <div className="mt-20 relative z-20 mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 perspective-1000" style={{ perspective: '1000px' }}>
+                    <motion.div
+                        initial={{ opacity: 0, rotateX: 20, y: 40, scale: 0.9 }}
+                        whileInView={{
+                            opacity: 1,
+                            rotateX: 0,
+                            y: 0,
+                            scale: 1,
+                            transition: {
+                                type: "spring",
+                                stiffness: 40,
+                                damping: 15,
+                                mass: 1,
+                                delay: 0.2
+                            }
+                        }}
+                        viewport={{ once: true, margin: "-100px" }}
+                        className="relative rounded-xl md:rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm shadow-2xl shadow-indigo-500/10 overflow-hidden"
+                    >
+                        {/* Glass Overlay/Reflection */}
+                        <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent pointer-events-none z-10 mix-blend-overlay"></div>
+
+                        {/* Video Element */}
+                        <video
+                            src="/Quizapo_Demo.mp4"
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                            preload="metadata"
+                            width="100%"
+                            height="100%"
+                            className="w-full h-auto object-cover rounded-xl md:rounded-2xl bg-slate-100 dark:bg-slate-800"
+                        >
+                            Your browser does not support the video tag.
+                        </video>
+
+                        {/* Mobile/Reduced Motion Fallback Note: 
+                             On very small screens or reduced motion preference, the 3D effect is minimized 
+                             by the nature of 'whileInView' bringing it to rotateX:0. 
+                             We can force static state via media queries if strictly needed, 
+                             but smooth spring transition usually handles mobile gracefully.
+                         */}
+                    </motion.div>
+
+                    {/* Decorative Background Glow for Video */}
+                    <div className="absolute -inset-4 bg-indigo-500/20 blur-3xl rounded-[3rem] -z-10 opacity-60"></div>
+                </div>
+
 
                 {/* Social Proof / Stats */}
                 <div className="pt-12 grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-16 border-t border-slate-100 dark:border-slate-900 mt-16 max-w-4xl mx-auto opacity-0 animate-in fade-in duration-1000 delay-500 fill-mode-forwards">
