@@ -1,6 +1,6 @@
 // src/App.tsx
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { db, auth } from './services/firebase';
 import {
   collection,
@@ -113,6 +113,12 @@ const App: React.FC = () => {
       }
     });
   }, []);
+
+  // Fix Stale Closures in Listeners
+  const viewRef = useRef(view);
+  const isLoadingRef = useRef(isLoading);
+  useEffect(() => { viewRef.current = view; }, [view]);
+  useEffect(() => { isLoadingRef.current = isLoading; }, [isLoading]);
 
   // Handling Deep Links & Auth Actions on Mount
   useEffect(() => {
@@ -234,6 +240,10 @@ const App: React.FC = () => {
         // Smart Navigation / Deep Linking on Initial Load
         const pendingTestId = sessionStorage.getItem('pendingTestId') || new URLSearchParams(window.location.search).get('testId');
 
+        // Use Refs to avoid stale closure issues during profile updates
+        const currentView = viewRef.current;
+        const currentLoading = isLoadingRef.current;
+
         if (pendingTestId) {
           // Verify and Redirect
           getDoc(doc(db, "tests", pendingTestId)).then(testSnap => {
@@ -243,7 +253,7 @@ const App: React.FC = () => {
               // Real-time Expiry Check
               if (testData.endDate && new Date(testData.endDate) < new Date()) {
                 alert("This test has ended and the link is no longer valid.");
-                if (isLoading) setView('landing');
+                if (currentLoading) setView('landing');
                 sessionStorage.removeItem('pendingTestId');
               } else {
                 // Valid Test
@@ -253,27 +263,27 @@ const App: React.FC = () => {
                 setView('studentLogin');
                 sessionStorage.removeItem('pendingTestId'); // Consume it
               }
-              sessionStorage.removeItem('pendingTestId'); // Consume it
+              // Removed duplicate removeItem call
             } else {
-              if (isLoading) setView('dashboard');
+              if (currentLoading) setView('dashboard');
             }
             setIsLoading(false);
           });
         }
-        else if (isLoading) {
+        else if (currentLoading) {
           // Redirect if on auth/landing pages but already logged in
-          if (['auth', 'landing', 'idVerification', 'emailVerification'].includes(view)) {
+          if (['auth', 'landing', 'idVerification', 'emailVerification'].includes(currentView)) {
             setView('dashboard');
           }
           setIsLoading(false);
-        } else if (view === 'auth') {
+        } else if (currentView === 'auth') {
           // Existing user logged in manually (or via Google) needs redirect
           setView('dashboard');
         }
       } else {
         // User doc missing? Only force logout if we aren't already in Auth/Registration flow
         // detailed check: if I am in 'auth', I might be registering via Google.
-        if (view !== 'auth') {
+        if (viewRef.current !== 'auth') {
           signOut(auth);
           setView('auth');
         }
@@ -315,7 +325,7 @@ const App: React.FC = () => {
     }));
 
     return () => unsubscribes.forEach(u => u());
-  }, [currentUser]);
+  }, [currentUser?.id]); // FIX: Only re-subscribe if ID changes, not full object (prevents flicker on profile updates)
 
   // --- Auto-Revoke Logic (Faculty Side) ---
   useEffect(() => {
@@ -542,7 +552,7 @@ const App: React.FC = () => {
 
 
   // --- Handlers: Career ---
-  const handleUpdateCareerGoal = async (roleId: string) => {
+  const handleUpdateCareerGoal = useCallback(async (roleId: string) => {
     if (!currentUser) return;
     try {
       const goal = { targetRoleId: roleId, targetRoleTitle: roleId.replace('-', ' ').toUpperCase() };
@@ -550,7 +560,7 @@ const App: React.FC = () => {
     } catch (e) {
       console.error("Failed to save career goal", e);
     }
-  };
+  }, [currentUser?.id]); // Memoized with ID dependency only
 
   const handleNavigate = (target: View) => {
     setError(null); setIsLoading(true);

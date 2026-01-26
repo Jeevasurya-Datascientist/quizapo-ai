@@ -1,35 +1,30 @@
-
 // src/components/Dashboard.tsx
 
 import React, { useMemo } from 'react';
 import { AppUser, Test, GeneratedMcqSet, TestAttempt, View, QuestionBank, CortexMetrics, PersonalizedPlan, Difficulty } from '../types';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
+import { Card, CardContent } from './ui/card';
 import { analyzePerformance, generatePersonalizedPlan, generateAdaptiveQuiz } from '../services/cortexService';
 import { CortexProfile } from './CortexProfile';
-import { CareerMapper } from './CareerMapper';
-import { db } from '../services/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
 import {
   BarChart3,
   Users,
   FileText,
-  TrendingUp,
   Activity,
   ArrowRight,
   Bell,
   User,
   ShieldCheck,
-  Star,
-  Award,
   Zap,
   Crown,
-  LayoutDashboard,
-  Rocket,
   PlusCircle,
   Network,
   Siren,
   PenTool,
-  Briefcase
+  Rocket,
+  Compass,
+  Award,
+  Settings,
+  Sparkles
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn } from '../lib/utils';
@@ -41,7 +36,6 @@ interface UserBadge {
   label: string;
   icon: any;
   color: string;
-  description: string;
 }
 
 const getUserBadges = (user: AppUser, publishedTests: Test[]): UserBadge[] => {
@@ -49,111 +43,52 @@ const getUserBadges = (user: AppUser, publishedTests: Test[]): UserBadge[] => {
   const followerCount = user.followers?.length || 0;
   const testCount = publishedTests.length;
 
-  if (user.isIdVerified) {
-    badges.push({ id: 'trustee', label: 'Verified', icon: ShieldCheck, color: 'bg-blue-100 text-blue-700 border-blue-200', description: 'Identity Verified' });
-  }
-  if (followerCount >= 50) {
-    badges.push({ id: 'influencer', label: 'Influencer', icon: Crown, color: 'bg-purple-100 text-purple-700 border-purple-200', description: 'Major Impact' });
-  }
-  if (testCount >= 5) {
-    badges.push({ id: 'prolific', label: 'Prolific', icon: Zap, color: 'bg-amber-100 text-amber-700 border-amber-200', description: 'High Output' });
-  }
+  if (user.isIdVerified) badges.push({ id: 'trustee', label: 'Verified', icon: ShieldCheck, color: 'text-blue-600 bg-blue-100' });
+  if (followerCount >= 50) badges.push({ id: 'influencer', label: 'Influencer', icon: Crown, color: 'text-purple-600 bg-purple-100' });
+  if (testCount >= 5) badges.push({ id: 'prolific', label: 'Prolific', icon: Zap, color: 'text-amber-600 bg-amber-100' });
+
   return badges;
 };
 
-// --- COMPONENT: DashboardHero ---
-const DashboardHero: React.FC<{
-  user: AppUser;
-  publishedTests: Test[];
-  onNavigate: (view: View) => void;
-}> = ({ user, publishedTests, onNavigate }) => {
-  const badges = useMemo(() => getUserBadges(user, publishedTests), [user, publishedTests]);
-  const isFaculty = user.role === 'faculty';
-
-  return (
-    <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700 text-white shadow-xl dark:shadow-purple-900/20">
-      {/* Abstract Pattern Overlay */}
-      <div className="absolute inset-0 opacity-10 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay pointer-events-none"></div>
-      <div className="absolute -top-24 -right-24 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
-      <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-indigo-900/30 rounded-full blur-3xl"></div>
-
-      <div className="relative z-10 p-6 md:p-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div className="space-y-4 max-w-2xl">
-          <div>
-            <div className="flex items-center gap-3 mb-2 opacity-90">
-              {user.collegeName && <span className="text-xs font-medium flex items-center gap-1"><Award className="w-3 h-3" /> {user.collegeName}</span>}
-            </div>
-            <h1 className="text-3xl md:text-5xl font-bold tracking-tight mb-2 leading-tight">
-              Welcome back, {user.name.split(' ')[0]}
-            </h1>
-            <p className="text-indigo-100/80 text-lg">
-              {isFaculty
-                ? "Your command center for assessments and student performance is ready."
-                : "Ready to test your knowledge today?"}
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {badges.map(b => (
-              <div key={b.id} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold shadow-sm backdrop-blur-md border border-white/20 bg-white/20 text-white")}>
-                <b.icon className="w-3.5 h-3.5" /> {b.label}
-              </div>
-            ))}
-            {!badges.length && <div className="text-xs text-indigo-200/70 italic">Complete actions to earn badges</div>}
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-3 min-w-[200px]">
-          <Button variant="secondary" size="lg" className="w-full shadow-lg bg-white/95 text-indigo-700 hover:bg-white" onClick={() => onNavigate('profile')}>
-            <User className="w-4 h-4 mr-2" /> My Profile
-          </Button>
-          <Button variant="secondary" size="lg" className="w-full shadow-lg bg-white/95 text-indigo-700 hover:bg-white" onClick={() => onNavigate('notifications')}>
-            <Bell className="w-4 h-4 mr-2" /> Notifications
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// --- COMPONENT: StatCard ---
-const StatCard = ({ label, value, icon: Icon, colorClass, borderClass, onClick }: any) => (
-  <Card
-    className={cn("border-l-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer min-w-[140px]", borderClass)}
+// --- COMPONENT: StatPill ---
+const StatPill = ({ label, value, icon: Icon, onClick }: any) => (
+  <div
     onClick={onClick}
+    className="flex items-center gap-3 px-4 py-3 bg-white/10 backdrop-blur-md rounded-xl border border-white/10 cursor-pointer hover:bg-white/20 transition-all font-medium min-w-[140px]"
   >
-    <CardContent className="p-5 flex items-center justify-between">
-      <div>
-        <p className="text-sm font-medium text-muted-foreground mb-1">{label}</p>
-        <div className="text-2xl font-bold tracking-tight">{value}</div>
-      </div>
-      <div className={cn("p-3 rounded-xl bg-opacity-10", colorClass)}>
-        <Icon className="w-5 h-5 opacity-90" />
-      </div>
-    </CardContent>
-  </Card>
+    <div className="p-2 rounded-lg bg-white/20">
+      <Icon className="w-5 h-5 text-white" />
+    </div>
+    <div className="flex flex-col">
+      <span className="text-xl font-bold text-white leading-none">{value}</span>
+      <span className="text-xs text-indigo-100 mt-1 opacity-80">{label}</span>
+    </div>
+  </div>
 );
 
-// --- COMPONENT: ActionCard ---
-const ActionCard = ({ title, desc, icon: Icon, onClick, gradient }: any) => (
+// --- COMPONENT: ActionCard (Bento Style) ---
+const ActionCard = ({ title, desc, icon: Icon, onClick, className, delay, color }: any) => (
   <div
     onClick={onClick}
     className={cn(
-      "group relative overflow-hidden rounded-2xl p-6 cursor-pointer border border-border shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1",
-      "bg-white dark:bg-zinc-900"
+      "group relative overflow-hidden rounded-3xl p-6 cursor-pointer border border-zinc-100 dark:border-zinc-800 shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1 bg-white dark:bg-zinc-900",
+      "animate-in fade-in slide-in-from-bottom-4",
+      className
     )}
+    style={{ animationDelay: `${delay}ms` }}
   >
-    <div className={cn("absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity duration-300", gradient)}></div>
-    <div className="relative z-10 flex flex-col h-full justify-between">
-      <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center mb-4 text-white shadow-md", gradient)}>
+    <div className={cn("absolute top-0 right-0 p-3 rounded-bl-2xl bg-opacity-10 opacity-0 group-hover:opacity-100 transition-opacity", color)}>
+      <ArrowRight className="w-5 h-5" />
+    </div>
+
+    <div className="flex flex-col h-full justify-between gap-4">
+      <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg", color)}>
         <Icon className="w-6 h-6" />
       </div>
+
       <div>
-        <h3 className="font-bold text-lg mb-1 group-hover:text-primary transition-colors">{title}</h3>
-        <p className="text-sm text-muted-foreground">{desc}</p>
-      </div>
-      <div className="mt-4 flex items-center text-xs font-semibold uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity text-primary">
-        Open <ArrowRight className="w-3 h-3 ml-1" />
+        <h3 className="font-bold text-lg leading-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{title}</h3>
+        <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{desc}</p>
       </div>
     </div>
   </div>
@@ -169,7 +104,7 @@ interface DashboardProps {
   followingCount: number;
   onNavigate: (view: View) => void;
   questionBanks: QuestionBank[];
-  onStartTest: (test: Test) => void; // New Prop for Adaptive Review
+  onStartTest: (test: Test) => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({
@@ -178,15 +113,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
   generatedSets,
   testAttempts,
   followersCount,
-  followingCount,
   onNavigate,
   questionBanks,
   onStartTest
 }) => {
-  // Use generic role logic if needed, but display unified view
-
-  // Calculate Stats
   const activeTests = publishedTests.filter(t => !t.endDate || new Date(t.endDate) > new Date()).length;
+  const badges = useMemo(() => getUserBadges(user, publishedTests), [user, publishedTests]);
 
   // --- Cortex AI Logic ---
   const [cortexMetrics, setCortexMetrics] = React.useState<CortexMetrics | undefined>();
@@ -194,15 +126,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [isGeneratingReview, setIsGeneratingReview] = React.useState(false);
 
   React.useEffect(() => {
-    // Determine which attempts to analyze. For Faculty, maybe imply they analyze their own progress or view? 
-    // Actually Dashboard is user-centric. If Faculty takes tests, they get analysis. 
-    // If Student, they get analysis.
     if (testAttempts.length > 0) {
       const m = analyzePerformance(testAttempts);
       setCortexMetrics(m);
       setPersonalPlan(generatePersonalizedPlan(m));
     } else {
-      // Init empty state if strictly needed or handle in UI
       const empty: CortexMetrics = { strongTopics: [], weakTopics: [], topicMap: {}, learningTrend: 'stable', recommendedDifficulty: Difficulty.Medium };
       setCortexMetrics(empty);
       setPersonalPlan(generatePersonalizedPlan(empty));
@@ -231,175 +159,177 @@ export const Dashboard: React.FC<DashboardProps> = ({
     }
   };
 
-  // --- Career Persistence moved to App.tsx ---
-
   return (
-    <div className="space-y-8 pb-12 animate-in fade-in duration-500 max-w-7xl mx-auto">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950/20 space-y-8 pb-20">
 
-      {/* 1. Hero */}
-      <DashboardHero user={user} publishedTests={publishedTests} onNavigate={onNavigate} />
+      {/* 1. HERO SECTION */}
+      <div className="relative overflow-hidden rounded-b-[3rem] bg-zinc-900 text-white shadow-2xl pb-16 pt-8 px-6 md:px-12">
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-purple-700 to-indigo-900 opacity-90"></div>
+        {/* Animated Orbs */}
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-96 h-96 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
 
-      {/* 1.5 Cortex AI Profile (Personalized Learning) */}
-      <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
-        <CortexProfile
-          metrics={cortexMetrics}
-          plan={personalPlan}
-          onStartReview={handleStartAdaptiveReview}
-          isLoading={isGeneratingReview}
-        />
-      </div>
-
-      {/* 1.6 Career Mapper (Phase 29) */}
-      <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
-        {/* --- Career Center Teaser --- */}
-        <section className="bg-gradient-to-r from-indigo-600 to-violet-600 rounded-2xl p-6 text-white shadow-lg flex flex-col md:flex-row items-center justify-between gap-6">
-          <div>
-            <h2 className="text-2xl font-bold flex items-center gap-2 mb-2">
-              <Briefcase className="w-6 h-6" /> Career Center
-            </h2>
-            <p className="text-indigo-100 max-w-xl">
-              Map your skills to <strong>15+ industry roles</strong>, discover salary insights, and get a personalized learning roadmap.
-            </p>
+        <div className="relative z-10 max-w-7xl mx-auto">
+          {/* Top Bar */}
+          <div className="flex justify-between items-center mb-8">
+            <div className="flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full backdrop-blur-sm border border-white/10 text-xs font-semibold uppercase tracking-wider">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              System Live
+            </div>
+            <div className="flex gap-3">
+              <Button size="icon" variant="ghost" className="text-white hover:bg-white/20 rounded-full" onClick={() => onNavigate('notifications')}>
+                <Bell className="w-5 h-5" />
+              </Button>
+              <Button size="icon" variant="ghost" className="text-white hover:bg-white/20 rounded-full" onClick={() => onNavigate('profile')}>
+                <User className="w-5 h-5" />
+              </Button>
+            </div>
           </div>
-          <Button
-            onClick={() => onNavigate('career')}
-            variant="secondary"
-            className="bg-white text-indigo-600 hover:bg-slate-100 font-bold px-6"
-          >
-            Open Career Mapper <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
-        </section>
-      </div>
 
-      {/* 2. Key Metrics Strip */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          label="Live Tests"
-          value={activeTests}
-          icon={Activity}
-          colorClass="bg-green-500/10 text-green-600"
-          borderClass="border-l-green-500"
-          onClick={() => onNavigate('content')}
-        />
-        <StatCard
-          label="Question Banks"
-          value={questionBanks.length}
-          icon={FileText}
-          colorClass="bg-blue-500/10 text-blue-600"
-          borderClass="border-l-blue-500"
-          onClick={() => onNavigate('content')}
-        />
-        <StatCard
-          label="Community"
-          value={followersCount}
-          icon={Users}
-          colorClass="bg-purple-500/10 text-purple-600"
-          borderClass="border-l-purple-500"
-          onClick={() => onNavigate('network')}
-        />
-        <StatCard
-          label="Integrity Score"
-          value="100%"
-          icon={ShieldCheck}
-          colorClass="bg-amber-500/10 text-amber-600"
-          borderClass="border-l-amber-500"
-          onClick={() => onNavigate('integrity')}
-        />
-      </div>
+          <div className="flex flex-col md:flex-row items-end justify-between gap-8">
+            <div>
+              <h1 className="text-4xl md:text-5xl font-bold mb-3 tracking-tight">
+                Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-sky-300">{user.name.split(' ')[0]}</span>
+              </h1>
+              <p className="text-indigo-100 text-lg md:text-xl max-w-2xl font-light">
+                Your command center is ready. You have <strong className="text-white">{activeTests} active tests</strong> scheduled for today.
+              </p>
 
-      {/* 3. Main Action Grid */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold tracking-tight flex items-center gap-2">
-            <LayoutDashboard className="w-5 h-5 text-muted-foreground" />
-            Command Console
-          </h2>
-        </div>
+              <div className="flex flex-wrap gap-2 mt-4">
+                {badges.map(b => (
+                  <Badge key={b.id} variant="secondary" className="gap-1 bg-white/10 hover:bg-white/20 text-white border-none">
+                    <b.icon className="w-3 h-3" /> {b.label}
+                  </Badge>
+                ))}
+                <Badge variant="outline" className="text-indigo-200 border-indigo-400/30">Faculty Access</Badge>
+              </div>
+            </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Unified Actions - Showing All Capabilities */}
-          <ActionCard
-            title="Content Library"
-            desc="Manage drafts, launch tests, and organize your question banks."
-            icon={FileText}
-            onClick={() => onNavigate('content')}
-            gradient="bg-gradient-to-br from-indigo-500 to-blue-600"
-          />
-          <ActionCard
-            title="Create Assessment"
-            desc="Generate new MCQs using AI."
-            icon={PlusCircle}
-            onClick={() => onNavigate('createBank')}
-            gradient="bg-gradient-to-br from-emerald-500 to-teal-600"
-          />
-          <ActionCard
-            title="Manual Creator"
-            desc="Build specific questions from scratch with fine-grained control."
-            icon={PenTool}
-            onClick={() => onNavigate('manualCreator')}
-            gradient="bg-gradient-to-br from-pink-500 to-rose-600"
-          />
-          <ActionCard
-            title="My Network"
-            desc="Connect with other faculty and manage your followers."
-            icon={Network}
-            onClick={() => onNavigate('network')}
-            gradient="bg-gradient-to-br from-violet-500 to-purple-600"
-          />
-          <ActionCard
-            title="Integrity Center"
-            desc="Monitor violations and manage test security alerts."
-            icon={Siren}
-            onClick={() => onNavigate('integrity')}
-            gradient="bg-gradient-to-br from-rose-500 to-red-600"
-          />
-
-          {/* Secondary Actions */}
-          <ActionCard
-            title="Performance Analytics"
-            desc="Deep dive into student performance and test statistics."
-            icon={BarChart3}
-            onClick={() => onNavigate('testAnalytics')}
-            gradient="bg-gradient-to-br from-amber-500 to-orange-600"
-          />
-
-          {/* Student-like actions available on same dash if desired, or hidden. 
-               User asked for "improved dashboard without role-based", so merging key student capability: "Take a Test" */}
-          <ActionCard
-            title="Take a Test"
-            desc="Enter a test ID or browse available tests."
-            icon={Rocket}
-            onClick={() => onNavigate('studentPortal')}
-            gradient="bg-gradient-to-br from-sky-500 to-cyan-600"
-          />
-          <ActionCard
-            title="My History"
-            desc="View your past attempts and certificates."
-            icon={FileText}
-            onClick={() => onNavigate('testHistory')}
-            gradient="bg-gradient-to-br from-lime-500 to-green-600"
-          />
-
-        </div>
-      </div>
-
-      {/* 4. Live Pulse / System Status */}
-      <div className="rounded-xl border bg-zinc-50 dark:bg-zinc-900/50 p-6 flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="relative">
-            <div className="w-3 h-3 bg-green-500 rounded-full animate-ping absolute"></div>
-            <div className="w-3 h-3 bg-green-500 rounded-full relative"></div>
-          </div>
-          <div>
-            <h4 className="font-semibold text-sm">System Operational</h4>
-            <p className="text-xs text-muted-foreground">All systems running smoothly. JS Corp Integrity Check Passed.</p>
+            {/* Hero Stats */}
+            <div className="flex gap-4">
+              <StatPill label="Active Tests" value={activeTests} icon={Activity} onClick={() => onNavigate('content')} />
+              <StatPill label="Followers" value={followersCount} icon={Users} onClick={() => onNavigate('network')} />
+            </div>
           </div>
         </div>
-        <div className="text-xs text-muted-foreground font-mono">
-          {new Date().toLocaleDateString()} • v2.1.0-CommandCenter
-        </div>
       </div>
 
+      {/* 2. MAIN GRID */}
+      <div className="max-w-7xl mx-auto px-4 md:px-8 -mt-10 relative z-20">
+
+        {/* Adaptive Learning / Cortex AI Highlight */}
+        <div className="mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <CortexProfile metrics={cortexMetrics} plan={personalPlan} onStartReview={handleStartAdaptiveReview} isLoading={isGeneratingReview} />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+
+          {/* COLUMN 1: Creation & Management */}
+          <div className="space-y-6">
+            <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest px-1">create</h3>
+            <div className="grid gap-4">
+              <ActionCard
+                title="Generate Assessment"
+                desc="Use AI to create comprehensive tests in seconds."
+                icon={Sparkles}
+                onClick={() => onNavigate('createBank')}
+                color="bg-indigo-600"
+                delay={100}
+              />
+              <ActionCard
+                title="Manual Builder"
+                desc="Design specific questions from scratch."
+                icon={PenTool}
+                onClick={() => onNavigate('manualCreator')}
+                color="bg-violet-600"
+                delay={200}
+              />
+              <ActionCard
+                title="Content Library"
+                desc="Manage your question banks and drafts."
+                icon={FileText}
+                onClick={() => onNavigate('content')}
+                color="bg-slate-800"
+                delay={300}
+              />
+            </div>
+          </div>
+
+          {/* COLUMN 2: Performance & Network */}
+          <div className="space-y-6">
+            <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest px-1">Analyze</h3>
+            <div className="grid gap-4">
+              <ActionCard
+                title="Performance Analytics"
+                desc="Deep dive into student results and insights."
+                icon={BarChart3}
+                onClick={() => onNavigate('testAnalytics')}
+                color="bg-emerald-600"
+                delay={400}
+                className="md:h-48" // Taller card
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <ActionCard
+                  title="Integrity"
+                  desc="Monitor Violations"
+                  icon={Siren}
+                  onClick={() => onNavigate('integrity')}
+                  color="bg-rose-600"
+                  delay={500}
+                />
+                <ActionCard
+                  title="Network"
+                  desc="Connections"
+                  icon={Network}
+                  onClick={() => onNavigate('network')}
+                  color="bg-sky-600"
+                  delay={600}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* COLUMN 3: Growth & Career */}
+          <div className="space-y-6">
+            <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest px-1">Grow</h3>
+            <div className="grid gap-4">
+              <div
+                onClick={() => onNavigate('career')}
+                className="group relative h-48 rounded-3xl p-6 cursor-pointer overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg transition-all hover:shadow-2xl hover:scale-[1.02]"
+              >
+                <div className="absolute right-0 top-0 p-3 opacity-20"><Compass className="w-24 h-24 rotate-12" /></div>
+                <div className="relative z-10 flex flex-col h-full justify-between">
+                  <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                    <Rocket className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-xl">Career Center</h3>
+                    <p className="text-indigo-100 text-sm mt-1">Map your skills to industry roles</p>
+                  </div>
+                </div>
+              </div>
+
+              <ActionCard
+                title="My History"
+                desc="View past attempts and certificates."
+                icon={Award}
+                onClick={() => onNavigate('testHistory')}
+                color="bg-amber-500"
+                delay={700}
+              />
+              <ActionCard
+                title="Take a Test"
+                desc="Browser public tests."
+                icon={Rocket}
+                onClick={() => onNavigate('studentPortal')}
+                color="bg-cyan-600"
+                delay={800}
+              />
+            </div>
+          </div>
+
+        </div>
+      </div>
     </div >
   );
 };
