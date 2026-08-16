@@ -12,26 +12,9 @@ interface TeamMember {
     isLead?: boolean;
 }
 
-const mentors = [
-    {
-        name: "Mr.S. Narendhiran M.E.,",
-        role: "Guide",
-        icon: <Brain className="w-6 h-6 text-indigo-500" />,
-        quote: "True innovation lies not just in writing code, but in solving real problems with empathy and precision."
-    },
-    {
-        name: "Mr.K. Ashok Kumar B.E.,",
-        role: "Project Incharge",
-        icon: <Trophy className="w-6 h-6 text-amber-500" />,
-        quote: "Success is the sum of small efforts, repeated day in and day out. Keep building, keep learning."
-    },
-];
-
 const teamMembers: TeamMember[] = [
-    { name: "Jegathratchagan A", role: "Team Lead", id: "24591436", isLead: true },
-    { name: "Mohammed Asik", role: "Developer", id: "24591441" },
-    { name: "Tamilselvan", role: "Developer", id: "23506315" },
-    { name: "Logeshwaran C", role: "Developer", id: "24506385" },
+    { name: "Jothilingam", role: "Team Lead", id: "24591436", isLead: true },
+    { name: "Harish", role: "Developer", id: "24591441" },
 ];
 
 export const TeamPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
@@ -99,45 +82,13 @@ export const TeamPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     </p>
                 </div>
 
-                {/* Mentors Section */}
-                <div className="mb-24 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
-                    <div className="flex items-center gap-4 mb-10 justify-center">
-                        <div className="h-px bg-slate-200 dark:bg-slate-800 w-full max-w-[100px]" />
-                        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Mentors & Guides</h2>
-                        <div className="h-px bg-slate-200 dark:bg-slate-800 w-full max-w-[100px]" />
-                    </div>
 
-                    <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-                        {mentors.map((mentor, i) => (
-                            <div key={i} className="group relative bg-white dark:bg-slate-900 rounded-2xl p-8 shadow-sm hover:shadow-xl border border-slate-200 dark:border-slate-800 transition-all duration-300 hover:scale-[1.02]">
-                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-t-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                                <div className="space-y-6">
-                                    <div className="flex items-start gap-5">
-                                        <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/20 transition-colors">
-                                            {mentor.icon}
-                                        </div>
-                                        <div>
-                                            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                                                {mentor.name}
-                                            </h3>
-                                            <div className="text-indigo-600 dark:text-indigo-400 font-medium text-sm mb-1">{mentor.role}</div>
-                                        </div>
-                                    </div>
 
-                                    <blockquote className="relative p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border-l-4 border-indigo-500 italic text-slate-600 dark:text-slate-300">
-                                        "{mentor.quote}"
-                                    </blockquote>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Development Team */}
+                {/* Team Members */}
                 <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
                     <div className="flex items-center gap-4 mb-10 justify-center">
                         <div className="h-px bg-slate-200 dark:bg-slate-800 w-full max-w-[100px]" />
-                        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Development Team</h2>
+                        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Team Members</h2>
                         <div className="h-px bg-slate-200 dark:bg-slate-800 w-full max-w-[100px]" />
                     </div>
 
