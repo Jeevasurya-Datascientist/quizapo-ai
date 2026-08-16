@@ -13,7 +13,7 @@ const buildPrompt = (inputs: FormState): string => {
   const contentSource = imageData ? "the provided image" : "the provided study material";
 
   return `
-You are Quizapo AI. ALWAYS return ONLY valid JSON. No markdown. No explanation text outside JSON.
+You are Quizx AI. ALWAYS return ONLY valid JSON. No markdown. No explanation text outside JSON.
 
 Inputs:
 - topic: "${topic}"
@@ -168,7 +168,7 @@ const _generateWithOpenRouter = async (
           Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
           "HTTP-Referer": "http://localhost",
-          "X-Title": "Quizapo MCQ Generator"
+          "X-Title": "Quizx MCQ Generator"
         },
         body: JSON.stringify({
           model,

@@ -276,7 +276,7 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
               <span className="text-xl font-bold">Q</span>
             </div>
-            <span className="text-2xl font-bold tracking-tight">Quizapo</span>
+            <span className="text-2xl font-bold tracking-tight">Quizx</span>
           </div>
 
           <h1 className="text-5xl font-extrabold tracking-tight leading-tight mb-6">
@@ -291,7 +291,7 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({
         <div className="relative z-10">
           <div className="p-6 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 max-w-sm">
             <p className="text-sm text-slate-300 italic mb-4">
-              "Quizapo has completely transformed how we conduct assessments. The interface is stunning and the AI features are game-changing."
+              "Quizx has completely transformed how we conduct assessments. The interface is stunning and the AI features are game-changing."
             </p>
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-xs font-bold">Dr</div>
@@ -323,7 +323,7 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({
             <p className="text-muted-foreground">
               {isForgotPass ? "Enter your email to receive recovery instructions" : isLogin
                 ? "Enter your credentials to access your account"
-                : "Enter your details to get started with Quizapo"}
+                : "Enter your details to get started with Quizx"}
             </p>
           </div>
 

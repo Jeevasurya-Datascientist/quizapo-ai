@@ -12,8 +12,8 @@ const PublicLayout: React.FC<{ title: string; children: React.ReactNode; onBack:
         <div className="bg-white border-b sticky top-0 z-10">
             <div className="container mx-auto px-4 h-16 flex items-center justify-between">
                 <div className="flex items-center gap-2 cursor-pointer" onClick={onBack}>
-                    <img src="/logo.png" alt="Quizapo AI" className="h-8 w-auto" />
-                    <span className="font-bold text-xl text-gray-900">Quizapo AI</span>
+                    <img src="/logo.png" alt="Quizx AI" className="h-8 w-auto" />
+                    <span className="font-bold text-xl text-gray-900">Quizx AI</span>
                 </div>
                 <Button variant="outline" onClick={onBack}>Back to App</Button>
             </div>
@@ -35,7 +35,7 @@ const PublicLayout: React.FC<{ title: string; children: React.ReactNode; onBack:
                     <button onClick={() => onNavigate?.('privacy')} className="hover:text-blue-600">Privacy</button>
                     <button onClick={() => onNavigate?.('terms')} className="hover:text-blue-600">Terms</button>
                 </div>
-                <p className="text-sm text-gray-500">&copy; {new Date().getFullYear()} Quizapo AI. All rights reserved.</p>
+                <p className="text-sm text-gray-500">&copy; {new Date().getFullYear()} Quizx AI. All rights reserved.</p>
             </div>
         </footer>
     </div>
@@ -43,7 +43,7 @@ const PublicLayout: React.FC<{ title: string; children: React.ReactNode; onBack:
 
 export const AboutPage: React.FC<PublicPageProps> = ({ onBack, onNavigate }) => (
     <PublicLayout title="About Us" onBack={onBack} onNavigate={onNavigate}>
-        <p className="lead">Quizapo AI is an advanced assessment platform designed to revolutionize the way students and faculty interact with educational content.</p>
+        <p className="lead">Quizx AI is an advanced assessment platform designed to revolutionize the way students and faculty interact with educational content.</p>
         <div className="my-8 grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="p-4 bg-blue-50 rounded-lg">
                 <Info className="w-8 h-8 text-blue-600 mb-2" />
@@ -61,7 +61,7 @@ export const AboutPage: React.FC<PublicPageProps> = ({ onBack, onNavigate }) => 
                 <p className="text-sm">Providing deep insights into student performance to drive better learning outcomes.</p>
             </div>
         </div>
-        <p>Founded with a passion for education technology, Quizapo AI combines cutting-edge generative AI models with a user-friendly interface.</p>
+        <p>Founded with a passion for education technology, Quizx AI combines cutting-edge generative AI models with a user-friendly interface.</p>
         <div className="mt-8 text-center">
             <Button variant="outline" onClick={() => onNavigate?.('team')}>Meet the Team</Button>
         </div>
@@ -77,13 +77,13 @@ export const ContactPage: React.FC<PublicPageProps> = ({ onBack, onNavigate }) =
             </div>
             <div>
                 <h3 className="font-bold text-gray-900">Email Support</h3>
-                <p className="text-blue-600 font-medium">support@quizapo.ai</p>
+                <p className="text-blue-600 font-medium">support@quizx.ai</p>
             </div>
         </div>
         <div className="mt-6">
             <h3 className="font-bold mb-2">Office Address</h3>
             <address className="not-italic text-gray-600">
-                Quizapo AI HQ<br />
+                Quizx AI HQ<br />
                 123 Innovation Drive, Tech Park<br />
                 Chennia, Tamil Nadu 600001
             </address>
@@ -105,12 +105,12 @@ export const PrivacyPage: React.FC<PublicPageProps> = ({ onBack, onNavigate }) =
 
 export const TermsPage: React.FC<PublicPageProps> = ({ onBack, onNavigate }) => (
     <PublicLayout title="Terms and Conditions" onBack={onBack} onNavigate={onNavigate}>
-        <p>Welcome to Quizapo AI.</p>
+        <p>Welcome to Quizx AI.</p>
         <h3>1. Acceptance of Terms</h3>
         <p>By accessing or using our services, you agree to be bound by these Terms. If you do not agree to these Terms, you may not use our services.</p>
         <h3>2. Use of Service</h3>
         <p>You agree to use the service only for lawful purposes and in accordance with these Terms.</p>
         <h3>3. Intellectual Property</h3>
-        <p>The service and its original content, features, and functionality are and will remain the exclusive property of Quizapo AI.</p>
+        <p>The service and its original content, features, and functionality are and will remain the exclusive property of Quizx AI.</p>
     </PublicLayout>
 );

@@ -650,7 +650,7 @@ const App: React.FC = () => {
     if (!window.jspdf) { alert("PDF library not loaded."); return; }
     const doc = new window.jspdf.jsPDF();
     doc.setFontSize(16);
-    doc.text("Quizapo Assessment", 10, 10);
+    doc.text("Quizx Assessment", 10, 10);
     doc.setFontSize(11);
 
     let y = 20;
@@ -686,7 +686,7 @@ const App: React.FC = () => {
     if (!window.docx) { alert("Docx library not loaded."); return; }
     const { Document, Packer, Paragraph, TextRun } = window.docx;
 
-    const children = [new Paragraph({ children: [new TextRun({ text: "Quizapo Assessment", bold: true, size: 32 })] })];
+    const children = [new Paragraph({ children: [new TextRun({ text: "Quizx Assessment", bold: true, size: 32 })] })];
 
     mcqs.forEach((q, i) => {
       children.push(new Paragraph({ children: [new TextRun({ text: `\n${i + 1}. ${q.question}`, bold: true })] }));

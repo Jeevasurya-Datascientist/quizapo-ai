@@ -95,7 +95,7 @@ export const TeamPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         Meet the <span className="cursor-pointer text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 hover:brightness-110 transition-all">Minds</span>
                     </h1>
                     <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-                        The dedicated team behind Quizapo AI, driving innovation in educational assessment technology.
+                        The dedicated team behind Quizx AI, driving innovation in educational assessment technology.
                     </p>
                 </div>
 

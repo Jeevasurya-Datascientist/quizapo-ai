@@ -54,7 +54,7 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center justify-center pointer-events-none">
             <div className="flex items-center gap-2 pointer-events-auto cursor-pointer" onClick={() => onNavigate('dashboard')}>
               <div className="bg-primary text-primary-foreground h-8 w-8 rounded-lg flex items-center justify-center font-bold text-lg">Q</div>
-              <span className="font-bold text-xl tracking-tight hidden sm:inline-block">Quizapo AI</span>
+              <span className="font-bold text-xl tracking-tight hidden sm:inline-block">Quizx AI</span>
               <span className="font-bold text-xl tracking-tight sm:hidden">Q.AI</span>
             </div>
           </div>

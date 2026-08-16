@@ -92,7 +92,7 @@ export const Certificate: React.FC<CertificateProps> = ({ attempt, onBack }) => 
             
             {/* 1. Header */}
             <div className="text-center mb-10">
-                <div className="text-sm font-bold tracking-[0.3em] text-amber-700 uppercase mb-2">Quizapo AI Certifications</div>
+                <div className="text-sm font-bold tracking-[0.3em] text-amber-700 uppercase mb-2">Quizx AI Certifications</div>
                 <h1 className="text-7xl font-bold text-gray-900 tracking-wide mb-2 uppercase" style={{ fontFamily: "serif" }}>Certificate</h1>
                 <h2 className="text-3xl italic text-gray-500 font-light">of Achievement</h2>
             </div>

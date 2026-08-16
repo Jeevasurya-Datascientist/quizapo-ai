@@ -22,7 +22,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onGetStart
                         <div className="bg-indigo-600 p-1.5 rounded-lg">
                             <Brain className="w-5 h-5 text-white" />
                         </div>
-                        <span className="font-bold text-xl tracking-tight">Quizapo AI</span>
+                        <span className="font-bold text-xl tracking-tight">Quizx AI</span>
                     </div>
                     <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600 dark:text-slate-400">
                         <button onClick={() => onNavigate('about')} className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">About</button>
@@ -60,7 +60,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onGetStart
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-500"></span>
                         </span>
-                        Quizapo AI v2.0 is Live
+                        Quizx AI v2.0 is Live
                     </div>
 
                     <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight leading-tight animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100 drop-shadow-sm">
@@ -112,7 +112,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onGetStart
 
                         {/* Video Element */}
                         <video
-                            src="/Quizapo_Demo.mp4"
+                            src="/Quizx_Demo.mp4"
                             autoPlay
                             loop
                             muted
@@ -158,7 +158,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onGetStart
             <section className="py-24 bg-slate-50 dark:bg-slate-900/50">
                 <div className="container mx-auto px-6">
                     <div className="text-center mb-16 space-y-4">
-                        <h2 className="text-3xl md:text-5xl font-bold">Why Quizapo?</h2>
+                        <h2 className="text-3xl md:text-5xl font-bold">Why Quizx?</h2>
                         <p className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto text-lg">
                             Everything you need to conduct world-class assessments.
                         </p>
@@ -205,7 +205,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onGetStart
                                 <div className="bg-indigo-600 p-1 rounded-md">
                                     <Brain className="w-4 h-4 text-white" />
                                 </div>
-                                <span className="font-bold text-lg">Quizapo AI</span>
+                                <span className="font-bold text-lg">Quizx AI</span>
                             </div>
                             <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">
                                 Empowering education through intelligent assessment technology.
@@ -241,7 +241,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onGetStart
 
                     <div className="pt-8 border-t border-slate-100 dark:border-slate-900 flex flex-col md:flex-row justify-between items-center gap-4">
                         <p className="text-sm text-slate-500">
-                            © {new Date().getFullYear()} Quizapo AI. All rights reserved.
+                            © {new Date().getFullYear()} Quizx AI. All rights reserved.
                         </p>
                         <div className="flex items-center gap-2 text-xs font-mono text-slate-400 uppercase tracking-widest">
                             <Code className="w-3 h-3" />
